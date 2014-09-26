@@ -31,6 +31,9 @@ function getEndpoints() {
             }).then(function(b) {
                 endpointCache = JSON.parse(b.toString());
                 return endpointCache;
+            }).fail(function(e) {
+                console.log("failed to fetch the endpoints");
+                throw e;
             });
         }
     });
@@ -52,6 +55,9 @@ function getAuthToken() {
             }).then(function(b) {
                 clientAuth = JSON.parse(b.toString());
                 return clientAuth.token;
+            }).fail(function(e) {
+                console.log("failed to get auth token");
+                throw e;
             });
         }
     });
@@ -60,8 +66,13 @@ function getAuthToken() {
 getAuthToken().then(function(token) {
     console.log("authenticated, connecting");
 
-    var url = urlUtil.parse(process.env.SPODB_URL);
-    ws = new WebSocket('ws://'+url.host+'/', {
+    var protocol, url = urlUtil.parse(process.env.SPODB_URL);
+    if (url.protocol == 'https:') {
+        protocol = 'wss';
+    } else {
+        protocol = 'ws';
+    }
+    ws = new WebSocket(protocol+'://'+url.host+'/', {
         headers: {
             "Authorization": 'Bearer ' + token
         
