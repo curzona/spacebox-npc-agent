@@ -79,10 +79,16 @@ getAuthToken().then(function(token) {
         }
     });
 }).then(function() {
-    ws.on('message', handleMessage);
     ws.on('error', function(error) {
         console.log("error: %s", error);
     });
+
+    ws.on('close', function() {
+        console.log("lost connection to the game");
+        process.exit(1);
+    });
+
+    ws.on('message', handleMessage);
 }).done();
 
 
