@@ -72,7 +72,7 @@ getAuthToken().then(function(token) {
     ws.on('error', function(error) {
         console.log("error: %s", error);
     });
-});
+}).done();
 
 
 //"Authorization": "Bearer " + token,
