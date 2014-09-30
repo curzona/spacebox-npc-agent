@@ -72,10 +72,10 @@ getAuthToken().then(function(token) {
     } else {
         protocol = 'ws';
     }
-    ws = new WebSocket(protocol+'://'+url.host+'/', {
+    ws = new WebSocket(protocol + '://' + url.host + '/', {
         headers: {
             "Authorization": 'Bearer ' + token
-        
+
         }
     });
 }).then(function() {
@@ -100,7 +100,7 @@ function handleMessage(message) {
 
     try {
         data = JSON.parse(message);
-    } catch(e) {
+    } catch (e) {
         console.log("invalid json: %s", message);
         return;
     }
@@ -117,29 +117,31 @@ function handleMessage(message) {
         case "state":
             game.world[data.state.key] = deepMerge(data.state.values, game.world[data.state.key]);
 
-            if (game.world[data.state.key].tombstone === true) {
-                var data_account = game.world[data.state.key].account;
+            if (game.world[data.state.key].type === 'spaceship') {
+                if (game.world[data.state.key].tombstone === true) {
+                    var data_account = game.world[data.state.key].account;
 
-                if (data_account !== undefined && game.byAccount[data_account] !== undefined) {
-                    var i = game.byAccount[data_account].indexOf(data.state.key);
+                    if (data_account !== undefined && game.byAccount[data_account] !== undefined) {
+                        var i = game.byAccount[data_account].indexOf(data.state.key);
 
-                    if (i > -1) {
-                        game.byAccount[data_account].splice(i, 1);
+                        if (i > -1) {
+                            game.byAccount[data_account].splice(i, 1);
+                        }
+                    } else {
+                        console.log("unable to remove from account list " + data.state.key);
+                        //console.log(game.world[data.state.key]);
+                        //console.log(Object.keys(game.byAccount));
                     }
-                } else {
-                    console.log("unable to remove from account list "+data.state.key);
-                    //console.log(game.world[data.state.key]);
-                    //console.log(Object.keys(game.byAccount));
-                }
 
-                delete game.world[data.state.key];
-            } else if (data.state.values.account !== undefined) {
-                if (game.byAccount[data.state.values.account] === undefined) {
-                    game.byAccount[data.state.values.account] = [];
-                }
+                    delete game.world[data.state.key];
+                } else if (data.state.values.account !== undefined) {
+                    if (game.byAccount[data.state.values.account] === undefined) {
+                        game.byAccount[data.state.values.account] = [];
+                    }
 
-                if (game.byAccount[data.state.values.account].indexOf(data.state.key) == -1) {
-                    game.byAccount[data.state.values.account].push(data.state.key);
+                    if (game.byAccount[data.state.values.account].indexOf(data.state.key) == -1) {
+                        game.byAccount[data.state.values.account].push(data.state.key);
+                    }
                 }
             }
 
@@ -161,23 +163,39 @@ function cmd(name, opts) {
 }
 
 function autoSpawn() {
-    var accountList = [ clientAuth.account, "the-other-guy" ];
+    var accountList = [clientAuth.account, "the-other-guy"];
     var byAccount = game.byAccount;
+
+    function spawn(account) {
+        function randomAxis() {
+            return ((10 * Math.random()) - 5);
+        }
+
+        cmd('spawn', {
+            account: account,
+            blueprint: "6e573ecc-557b-4e05-9f3b-511b2611c474",
+            position: {
+                x: randomAxis(),
+                y: randomAxis(),
+                z: randomAxis(),
+            }
+        });
+    }
 
     // TODO The accountList may not be up to date right away
     accountList.forEach(function(account) {
         if (byAccount[account] === undefined || byAccount[account].length === 0) {
-            cmd('spawn', { account: account });
-            cmd('spawn', { account: account });
+            spawn(account);
+            spawn(account);
         } else if (byAccount[account].length < 2) {
-            cmd('spawn', { account: account });
+            spawn(account);
         }
     });
 }
 
 function autoTargetEnemy() {
-/*    cmd('orbit', { subject: key, target: key });
-    */
+    /*    cmd('orbit', { subject: key, target: key });
+     */
 
     var accounts = Object.keys(game.byAccount);
 
@@ -190,14 +208,20 @@ function autoTargetEnemy() {
                 var ship = game.world[key];
                 if (ship.weapon.state != 'shoot') {
                     var done = false;
-                    accounts.forEach(function (enemy) {
+                    accounts.forEach(function(enemy) {
                         if (!done && uuid != enemy && game.byAccount[enemy].length > 0) {
-                            cmd('orbit', { subject: key, target: game.byAccount[enemy][0] });
-                            cmd('shoot', { subject: key, target: game.byAccount[enemy][0] });
+                            cmd('orbit', {
+                                subject: key,
+                                target: game.byAccount[enemy][0]
+                            });
+                            cmd('shoot', {
+                                subject: key,
+                                target: game.byAccount[enemy][0]
+                            });
                             done = true;
                         }
                     });
-                
+
                 }
             }
         });
@@ -206,6 +230,16 @@ function autoTargetEnemy() {
 
 game.on('ready', function() {
     console.log("game ready");
+
+    cmd('spawnStructure', {
+        blueprint: 'd9c166f0-3c6d-11e4-801e-d5aa4697630f',
+        position: {
+            x: 5,
+            y: 5,
+            z: 5
+        },
+        account: clientAuth.account
+    });
 
     setInterval(autoSpawn, 1000);
     setInterval(autoTargetEnemy, 1000);
