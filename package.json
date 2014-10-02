@@ -12,6 +12,7 @@
     "q-io": "~1",
     "node-uuid": "latest",
     "machina": "latest",
+    "spacebox-common": "curzonj/spacebox-nodejs-common",
     "three": "latest"
   },
   "jshintConfig": {

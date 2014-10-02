@@ -8,6 +8,7 @@ var qhttp = require("q-io/http");
 var deepMerge = require('./deepMerge');
 var EventEmitter = require('events').EventEmitter;
 var machina = require('machina');
+var C = require('spacebox-common');
 
 Q.longStackSupport = true;
 
@@ -50,7 +51,7 @@ var gameAgentFSM = new machina.Fsm({
             },
             'build a scaffold': function() {
                 var self = this;
-                request('build', 'GET', 200, '/facilities?all=true').then(function(list) {
+                C.request('build', 'GET', 200, '/facilities?all=true').then(function(list) {
                     console.log(list);
                     return build('manufacture', 'ffb74468-7162-4bfb-8a0e-a8ae72ef2a8b', self.starterShip, 1);
                 }).then(function(body) {
@@ -75,6 +76,10 @@ var gameAgentFSM = new machina.Fsm({
         }
     }
 });
+
+setInterval(function() {
+    console.log("agent state: %s", gameAgentFSM.state);
+}, 1000);
 
 var websocketFSM = machina.Fsm.extend({
     initialState: 'uninitialized',
@@ -155,58 +160,16 @@ var buildFSM = new websocketFSM({
     }
 });
 
-function getEndpoints() {
-    return Q.fcall(function() {
-        if (endpointCache !== undefined) {
-            return endpointCache;
-        } else {
-            return qhttp.read({
-                url: process.env.SPODB_URL + '/endpoints',
-                headers: {
-                    "Content-Type": "application/json",
-                }
-            }).then(function(b) {
-                endpointCache = JSON.parse(b.toString());
-                return endpointCache;
-            }).fail(function(e) {
-                console.log("failed to fetch the endpoints");
-                throw e;
-            });
-        }
-    });
-}
-
-function getAuthToken() {
-    return getEndpoints().then(function(endpoints) {
-        var now = new Date().getTime();
-
-        if (clientAuth !== undefined && clientAuth.expires > now) {
-            return clientAuth.token;
-        } else {
-            return qhttp.read({
-                url: endpoints.auth + '/auth?ttl=3600',
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": 'Basic ' + new Buffer(process.env.INTERNAL_CREDS).toString('base64')
-                }
-            }).then(function(b) {
-                clientAuth = JSON.parse(b.toString());
-                return clientAuth.token;
-            }).fail(function(e) {
-                console.log("failed to get auth token");
-                throw e;
-            });
-        }
-    });
-}
-
 function openWebSocket(which, fsm) {
     if (fsm === undefined) {
         throw new Error("fsm must not be undefined");
     }
 
-    return Q.spread([getEndpoints(), getAuthToken()], function(endpoints, token) {
+    return Q.spread([C.getEndpoints(), C.getAuth()], function(endpoints, auth) {
         console.log("authenticated, connecting to "+which);
+
+        clientAuth = auth;
+        var token = auth.token;
 
         var protocol, url = urlUtil.parse(endpoints[which]);
         if (url.protocol == 'https:') {
@@ -299,42 +262,11 @@ function cmd(name, opts) {
 }
 
 function build(how, what, where, how_many) {
-    return request('build', 'POST', 201, '/jobs', {
+    return C.request('build', 'POST', 201, '/jobs', {
         target: what,
         facility: where,
         action: how,
         quantity: how_many,
         slice: 'default'
-    });
-}
-
-function request(endpoint, method, expects, path, body) {
-    return Q.spread([getEndpoints(), getAuthToken()], function(endpoints, token) {
-        return qhttp.request({
-            method: method,
-            url: endpoints[endpoint] + path,
-            headers: {
-                "Authorization": "Bearer " + token,
-                "Content-Type": "application/json"
-            },
-            body: ( body === undefined ? [] : [JSON.stringify(body)])
-        }).then(function(resp) {
-            if (resp.status !== expects) {
-                resp.body.read().then(function(b) {
-                    console.log("build " + resp.status + " reason: " + b.toString());
-                }).done();
-
-                throw new Error(endpoint+" responded with " + resp.status);
-            } else {
-                return resp.body.read().then(function(b) {
-                    try {
-                        return JSON.parse(b.toString());
-                    } catch(e) {
-                        console.log(e);
-                        return b;
-                    }
-                });
-            }
-        });
     });
 }
