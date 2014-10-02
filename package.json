@@ -11,6 +11,7 @@
     "q": "~1",
     "q-io": "~1",
     "node-uuid": "latest",
+    "machina": "latest",
     "three": "latest"
   },
   "jshintConfig": {
