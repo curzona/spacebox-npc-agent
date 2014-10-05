@@ -9,6 +9,7 @@ var deepMerge = require('./deepMerge');
 var EventEmitter = require('events').EventEmitter;
 var machina = require('machina');
 var C = require('spacebox-common');
+var uuidGen = require('node-uuid');
 
 Q.longStackSupport = true;
 
@@ -18,13 +19,6 @@ var game = {
     world: {},
     byAccount: {}
 };
-
-var buildRequestFSM = new machina.Fsm({
-    initialState: 'uninitialized',
-    initialize: function() {
-
-    }
-});
 
 var websocketFSM = machina.Fsm.extend({
     initialState: 'uninitialized',
@@ -108,78 +102,29 @@ var gameAgentFSM = new machina.Fsm({
     },
     states: {
         'uninitialized': {
-            // TODO I don't actually know that I have nothing
-            'connected': 'have nothing',
-        },
-        'have nothing': {
-            _onEnter: function() {
-                cmd('spawnStarter');
-            },
-            'industry update': function(msg) {
-                if (msg.type == 'facility' && msg.blueprint == '7abb04d3-7d58-42d8-be93-89eb486a1c67' && msg.tombstone !== true) {
-                    this.starterShip = msg.uuid;
-                    this.handle('loadout complete');
-                }
-            },
-            'loadout complete': 'have starter'
-        },
-        'have starter': {
-            _onEnter: function() {
-                this.handle('logic tree');
-            },
-            'logic tree': function() {
-                /*
-                 * need a mine
-                 *      need a deployed scaffold
-                 *              need a scaffold in inventory
-                 * need a factory
-                 *      need a deployed scaffold
-                 *              need a scaffold in inventory
-                 * need a fighter in space
-                 *      need a basic fighter in an inventory
-                 *              need a factory
-                 *              need metal in the factory - just put more metal in the loadout
-                 */
-                // TODO all these can be expressed more declaratively
-                if (!haveOrBuilding('ffb74468-7162-4bfb-8a0e-a8ae72ef2a8b', 2)) {
-                    // build a scaffold
-                    build('manufacture', 'ffb74468-7162-4bfb-8a0e-a8ae72ef2a8b',
-                          this.starterShip, 1).then(function(body) {
-                        this.job_uuid = body.job.uuid;
-                    }.bind(this)).done();
-                }
-               
-                // TODO what about if I've asked for it and am waiting?
-                if(needFacility('ffb74468-7162-4bfb-8a0e-a8ae72ef2a8b')) {
-                    cmd('deploy', {
-                        shipID: this.starterShip,
+            'connected': function() {
+                var uuid = uuidGen.v1();
+                C.request('inventory', 'POST', 204, '/inventory', [{
+                    container_action: 'create',
+                    uuid: uuid,
+                    blueprint: "d9c166f0-3c6d-11e4-801e-d5aa4697630f" // factory
+                }, {
+                    inventory: uuid,
+                    slice: 'default',
+                    blueprint: "7abb04d3-7d58-42d8-be93-89eb486a1c67", // startership
+                    quantity: 2
+                }]).then(function() {
+                    return C.request('inventory', 'POST', 200, '/ships', {
+                        inventory: uuid,
                         slice: 'default',
-                        blueprint: 'ffb74468-7162-4bfb-8a0e-a8ae72ef2a8b'
+                        blueprint: "7abb04d3-7d58-42d8-be93-89eb486a1c67",
                     });
-                } else if (haveFacility('ffb74468-7162-4bfb-8a0e-a8ae72ef2a8b') && needFacility("33e24278-4d46-4146-946e-58a449d5afae")) {
-                    var self = this;
-                    C.request('inventory', 'POST', 204, '/inventory', [
-                        {
-                            inventory: this.starterShip,
-                            slice: 'default',
-                            blueprint: "f9e7e6b4-d5dc-4136-a445-d3adffc23bc6", // metal
-                            quantity: 2
-                        },
-                        {
-                            inventory: this.scaffold,
-                            slice: 'default',
-                            blueprint: "f9e7e6b4-d5dc-4136-a445-d3adffc23bc6", // metal
-                            quantity: 2
-                        },
-                    ]).then(function() {
-                        return build('construct', "33e24278-4d46-4146-946e-58a449d5afae",
-                              self.scaffold, 1).then(function(body) {
-                            self.job_uuid = body.job.uuid;
-                        });
-                    }).done();
-                }
+                }).then(function(s) {
+                    console.log(s);
+                    cmd('undock', { ship_uuid: s.uuid });
+                }).done();
             }
-        }
+        },
     }
 });
 
@@ -286,24 +231,4 @@ function cmd(name, opts) {
     console.log(opts);
 
     spaceWebsocketsFSM.ws.send(JSON.stringify(opts));
-}
-
-function build(how, what, where, how_many) {
-    return C.request('build', 'POST', 201, '/jobs', {
-        target: what,
-        facility: where,
-        action: how,
-        quantity: how_many,
-        slice: 'default'
-    });
-}
-
-// these require dependency tracking,
-// I don't have reverse production indexes yet
-function needFacility(blueprint) {
-
-}
-
-function needItem(blueprint, quantity) {
-
 }
