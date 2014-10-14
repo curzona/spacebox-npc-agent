@@ -66,7 +66,7 @@ var websocketFSM = machina.Fsm.extend({
 });
 
 var spaceWebsocketsFSM = new websocketFSM({
-    service_name: 'space',
+    service_name: '3dsim',
     states: {
         'disconnected': {
             _onEnter: function() {
