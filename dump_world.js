@@ -53,7 +53,7 @@ getAuthToken().then(function(token) {
     ws.on('error', function(error) {
         console.log("error: %s", error);
     });
-});
+}).done();
 
 
 //"Authorization": "Bearer " + token,
@@ -113,5 +113,4 @@ function handleMessage(message) {
 
 game.on('ready', function() {
     console.log(game.world);
-    ws.terminate();
 });
