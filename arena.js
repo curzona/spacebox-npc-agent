@@ -4,12 +4,13 @@
 
 var WebSocket = require('ws');
 
-var urlUtil = require("url");
-var Q = require('q');
-var qhttp = require("q-io/http");
-var deepMerge = require('./deepMerge');
-var EventEmitter = require('events').EventEmitter;
-
+var urlUtil = require("url"),
+    Q = require('q'),
+    C = require('spacebox-common'),
+    qhttp = require("q-io/http"),
+    deepMerge = require('./deepMerge'),
+    EventEmitter = require('events').EventEmitter,
+    WebsocketWrapper = require('spacebox-common/src/websockets-wrapper.js');
 
 var ws;
 var clientAuth;
@@ -20,90 +21,24 @@ var game = new EventEmitter();
 game.world = {};
 game.byAccount = {};
 
-function getEndpoints() {
-    return Q.fcall(function() {
-        if (endpointCache !== undefined) {
-            return endpointCache;
-        } else {
-            return qhttp.read({
-                url: process.env.SPODB_URL + '/endpoints',
-                headers: {
-                    "Content-Type": "application/json",
-                }
-            }).then(function(b) {
-                endpointCache = JSON.parse(b.toString());
-                return endpointCache;
-            }).fail(function(e) {
-                console.log("failed to fetch the endpoints");
-                throw e;
-            });
-        }
-    });
-}
-
-function getAuthToken() {
-    return getEndpoints().then(function(endpoints) {
-        var now = new Date().getTime();
-
-        if (clientAuth !== undefined && clientAuth.expires > now) {
-            return clientAuth.token;
-        } else {
-            return qhttp.read({
-                url: endpoints.auth + '/auth?ttl=3600',
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": 'Basic ' + new Buffer(process.env.INTERNAL_CREDS).toString('base64')
-                }
-            }).then(function(b) {
-                clientAuth = JSON.parse(b.toString());
-                return clientAuth.token;
-            }).fail(function(e) {
-                console.log("failed to get auth token");
-                throw e;
-            });
-        }
-    });
-}
-
-getAuthToken().then(function(token) {
+C.getAuth().then(function(auth) {
+    clientAuth = auth;
+    return auth.token;
+}).then(function(token) {
     console.log("authenticated, connecting");
 
-    var protocol, url = urlUtil.parse(process.env.SPODB_URL);
-    if (url.protocol == 'https:') {
-        protocol = 'wss';
-    } else {
-        protocol = 'ws';
-    }
-    ws = new WebSocket(protocol + '://' + url.host + '/', {
-        headers: {
-            "Authorization": 'Bearer ' + token
-
-        }
-    });
-}).then(function() {
-    ws.on('error', function(error) {
-        console.log("error: %s", error);
-    });
-
-    ws.on('close', function() {
-        console.log("lost connection to the game");
-        process.exit(1);
-    });
-
+    ws  = WebsocketWrapper.get("3dsim", '/', { token: token });
     ws.on('message', handleMessage);
 }).done();
 
 
-//"Authorization": "Bearer " + token,
-
-
-function handleMessage(message) {
+function handleMessage(event) {
     var data;
 
     try {
-        data = JSON.parse(message);
+        data = JSON.parse(event.data);
     } catch (e) {
-        console.log("invalid json: %s", message);
+        console.log("invalid json: %s", event.message);
         return;
     }
 
