@@ -3,12 +3,13 @@
 'use strict';
 
 var WebSocket = require('ws'),
+    repl = require("repl"),
     urlUtil = require("url"),
-    C = require('spacebox-common');
+    C = require('spacebox-common'),
+    WebsocketWrapper = require('spacebox-common/src/websockets-wrapper.js');
 
-var repl = require("repl");
 
-var ws, clientAuth, world = {};
+var ws, world = {};
 
 function cmd(name, opts) {
     if (opts === undefined) {
@@ -18,25 +19,24 @@ function cmd(name, opts) {
     opts.command = name;
     console.log(opts);
 
-    ws.send(JSON.stringify(opts));
+    ws.connection.send(JSON.stringify(opts));
 }
 
-function handleMessage(message) {
+function handleMessage(e) {
     var data;
 
     try {
-        data = JSON.parse(message);
-    } catch (e) {
-        console.log("invalid json: %s", message);
+        data = JSON.parse(e.data);
+    } catch (error) {
+        console.log(error);
+        console.log("invalid json: %s", e.data);
         return;
     }
 
     switch (data.type) {
-        case "arenaAccount":
-            clientAuth = data.account;
-            break;
         case "state":
             world[data.state.key] = C.deepMerge(data.state.values, world[data.state.key] || {});
+            console.log("updated", data.state.key);
             break;
         default:
             console.log(data);
@@ -47,40 +47,20 @@ function handleMessage(message) {
 C.getAuthToken().then(function(token) {
     console.log("authenticated, connecting");
 
-    var protocol, url = urlUtil.parse(process.env.SPODB_URL);
-    if (url.protocol == 'https:') {
-        protocol = 'wss';
-    } else {
-        protocol = 'ws';
-    }
-    ws = new WebSocket(protocol + '://' + url.host + '/', {
-        headers: {
-            "Authorization": 'Bearer ' + token
-
-        }
-    });
-}).then(function() {
-    ws.on('error', function(error) {
-        console.log("error: %s", error);
-    });
-
-    ws.on('close', function() {
-        console.log("lost connection to the game");
-        process.exit(1);
-    });
-
+    ws  = WebsocketWrapper.get("3dsim", '/', { token: token });
     ws.on('message', handleMessage);
 }).done();
 
 var r = repl.start({});
 
 r.on('exit', function () {
-  console.log("closing");
-  ws.close();
-  process.exit();
+    console.log("closing");
+    ws.close();
+    process.exit();
 });
 
 C.deepMerge({
+    logit: function(arg) { console.log(arg); },
     cmd: cmd,
     world: world,
     C: C
