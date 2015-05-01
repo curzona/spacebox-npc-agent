@@ -8,6 +8,7 @@ var WebSocket = require('ws'),
     C = require('spacebox-common'),
     WebsocketWrapper = require('spacebox-common/src/websockets-wrapper.js');
 
+var common_setup = require('./src/common_setup.js');
 
 var ws, world = {};
 
@@ -35,7 +36,9 @@ function handleMessage(e) {
 
     switch (data.type) {
         case "state":
-            world[data.state.key] = C.deepMerge(data.state.values, world[data.state.key] || {});
+            world[data.state.key] = C.deepMerge(data.state.values, world[data.state.key] || {
+                uuid: data.state.key
+            });
             console.log("updated", data.state.key);
             break;
         default:
@@ -59,15 +62,20 @@ r.on('exit', function () {
     process.exit();
 });
 
-C.deepMerge({
-    logit: function(arg) { console.log(arg); },
+var context =  {
+    logit: function(arg) { r.context.ret  = arg; console.log(arg); return arg; },
     cmd: cmd,
     world: world,
     C: C
-}, r.context);
+};
+
+common_setup(context);
 
 C.getBlueprints().then(function(b) {
-    r.context.blueprints = b;
+    context.blueprints = b;
+
+    C.deepMerge(context, r.context);
+
     console.log("Blueprints loaded");
 });
 

@@ -8,7 +8,6 @@ var urlUtil = require("url"),
     Q = require('q'),
     C = require('spacebox-common'),
     qhttp = require("q-io/http"),
-    deepMerge = require('./deepMerge'),
     EventEmitter = require('events').EventEmitter,
     WebsocketWrapper = require('spacebox-common/src/websockets-wrapper.js');
 
@@ -52,7 +51,7 @@ function handleMessage(event) {
             game.emit('ready');
             break;
         case "state":
-            game.world[data.state.key] = deepMerge(data.state.values, game.world[data.state.key]);
+            game.world[data.state.key] = C.deepMerge(data.state.values, game.world[data.state.key]);
 
             if (game.world[data.state.key].type === 'spaceship') {
                 if (game.world[data.state.key].tombstone === true) {
