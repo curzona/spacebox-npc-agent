@@ -6,77 +6,78 @@ var WebSocket = require('ws'),
     repl = require("repl"),
     urlUtil = require("url"),
     C = require('spacebox-common'),
-    WebsocketWrapper = require('spacebox-common/src/websockets-wrapper.js');
+    WebsocketWrapper = require('spacebox-common/src/websockets-wrapper.js')
 
-var common_setup = require('./src/common_setup.js');
+var common_setup = require('./src/common_setup.js')
 
-var ws, world = {};
+var ws, ctx;
 
 function cmd(name, opts) {
     if (opts === undefined) {
-        opts = {};
+        opts = {}
     }
 
-    opts.command = name;
-    console.log(opts);
+    opts.command = name
+    console.log(opts)
 
-    ws.connection.send(JSON.stringify(opts));
+    ws.connection.send(JSON.stringify(opts))
 }
 
 function handleMessage(e) {
-    var data;
+    var data
 
     try {
-        data = JSON.parse(e.data);
+        data = JSON.parse(e.data)
     } catch (error) {
-        console.log(error);
-        console.log("invalid json: %s", e.data);
-        return;
+        console.log(error)
+        console.log("invalid json: %s", e.data)
+        return
     }
 
     switch (data.type) {
         case "state":
-            world[data.state.key] = C.deepMerge(data.state.values, world[data.state.key] || {
+            ctx.world[data.state.key] = C.deepMerge(data.state.values, ctx.world[data.state.key] || {
                 uuid: data.state.key
-            });
-            console.log("updated", data.state.key);
-            break;
+            })
+            console.log("updated", data.state.key)
+            break
         default:
-            console.log(data);
-            break;
+            console.log(data)
+            break
     }
 }
 
 C.getAuthToken().then(function(token) {
-    console.log("authenticated, connecting");
+    console.log("authenticated, connecting")
 
-    ws  = WebsocketWrapper.get("3dsim", '/', { token: token });
-    ws.on('message', handleMessage);
-}).done();
+    ws  = WebsocketWrapper.get("3dsim", '/', { token: token })
+    ws.onOpen(function() {
+        console.log('reset the world')
+        ctx.world = {}
+    })
+    ws.on('message', handleMessage)
+}).done()
 
-var r = repl.start({});
+var r = repl.start({})
+ctx = r.context
 
 r.on('exit', function () {
-    console.log("closing");
-    ws.close();
-    process.exit();
-});
+    console.log("closing")
+    ws.close()
+    process.exit()
+})
 
-var context =  {
-    logit: function(arg) { r.context.ret  = arg; console.log(arg); return arg; },
+C.deepMerge({
+    logit: function(arg) { r.context.ret  = arg; console.log(arg); return arg },
     cmd: cmd,
-    world: world,
     C: C
-};
+}, r.context)
 
-common_setup(context);
+common_setup(ctx)
 
 C.getBlueprints().then(function(b) {
-    context.blueprints = b;
-
-    C.deepMerge(context, r.context);
-
-    console.log("Blueprints loaded");
-});
+    ctx.blueprints = b
+    console.log("Blueprints loaded")
+})
 
 
