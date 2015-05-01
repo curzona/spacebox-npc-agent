@@ -18,7 +18,7 @@ module.exports = function(ctx) {
             starter = C.find(ctx.world, { name: 'Starter Ship' });
 
             return C.request('build', 'POST', 201, '/jobs', { target: scaffoldB.uuid, facility: starter.uuid, action: 'manufacture', quantity: 2, slice: 'default' }).then(ctx.logit);
-        }).delay(5000).then(function() {
+        }).delay(10000).then(function() {
             ctx.cmd('deploy', { shipID: starter.uuid, slice: 'default', blueprint: scaffoldB.uuid });
         }).delay(2000).then(function() {
             scaffold = C.find(ctx.world, { name: 'Basic Scaffold' });
