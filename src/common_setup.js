@@ -18,18 +18,7 @@ module.exports = function(ctx) {
             starter = C.find(ctx.world, { name: 'Starter Ship' });
 
             return C.request('build', 'POST', 201, '/jobs', { target: scaffoldB.uuid, facility: starter.uuid, action: 'manufacture', quantity: 2, slice: 'default' }).then(ctx.logit);
-        }).fail(function(e) {
-            console.log(e);
-            console.log(e.stacktrace);
-        }).done();
-        /*
-         * }).then(function(resp) {
-            var d = Q.defer();
-
-            C.request('build', 'GET', 200, '/jobs/'+resp.job.uuid).then(ctx.logit);
-
-            return d;
-        }).then(function() {
+        }).delay(5000).then(function() {
             ctx.cmd('deploy', { shipID: starter.uuid, slice: 'default', blueprint: scaffoldB.uuid });
         }).delay(2000).then(function() {
             scaffold = C.find(ctx.world, { name: 'Basic Scaffold' });
@@ -37,10 +26,9 @@ module.exports = function(ctx) {
             return C.request("inventory", "POST", 204, "/inventory", [ { inventory: starter.uuid, slice: 'default', blueprint: metalB.uuid, quantity: -2 }, { inventory: scaffold.uuid, slice: 'default', blueprint: metalB.uuid, quantity: 2 } ]).then(ctx.logit);
         }).then(function() {
             return C.request('build', 'POST', 201, '/jobs', { target: oreMineB.uuid, facility: scaffold.uuid, action: 'construct', quantity: 1, slice: 'default' }).then(ctx.logit);
-        }).fail(function(e) {
+        }).delay(5000).fail(function(e) {
             console.log(e);
             console.log(e.stacktrace);
         }).done();
-        */
     };
 };
