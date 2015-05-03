@@ -290,8 +290,8 @@ function cmd(name, opts) {
 
 function build(how, what, where, how_many) {
     return C.request('build', 'POST', 201, '/jobs', {
-        target: what,
         facility: where,
+        blueprint: what,
         action: how,
         quantity: how_many,
         slice: 'default'
