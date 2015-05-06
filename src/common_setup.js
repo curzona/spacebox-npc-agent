@@ -5,6 +5,20 @@ var Q = require('q'),
 
 
 module.exports = function(ctx) {
+    ctx.scanning = function() {
+        var starter = C.find(ctx.world, { name: 'Starter Ship' }, false);
+
+        Q.fcall(function() {
+            if (starter === undefined)
+                ctx.cmd('spawnStarter');
+        }).delay(1000).then(function() {
+            starter = C.find(ctx.world, { name: 'Starter Ship' });
+            ctx.cmd("scanWormholes", { shipID: starter.uuid })
+        }).delay(1000).fail(function(e) {
+            console.log(e);
+            console.log(e.stacktrace);
+        }).done();
+    }
 
     ctx.basic_setup = function() {
         var starter, scaffold,
