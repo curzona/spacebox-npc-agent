@@ -8,6 +8,11 @@ var WebSocket = require('ws'),
     C = require('spacebox-common'),
     WebsocketWrapper = require('spacebox-common/src/websockets-wrapper.js')
 
+C.configure({
+    AUTH_URL: process.env.AUTH_URL,
+    credentials: process.env.INTERNAL_CREDS,
+})
+
 var common_setup = require('./src/common_setup.js')
 
 var ws, ctx;
