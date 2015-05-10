@@ -2,6 +2,11 @@
 
 'use strict';
 
+if (process.argv[3] === undefined) {
+    console.log("Usage: console.js ENDPOINT ACCOUNT_ID:SECRET\nExample: console.js http://localhost:5200 6ab4433b-90cd-4a76-9eb0-be0be7c1646b:a213296a-3f8b-4015-aa97-f8ec6cd90f5b")
+    process.exit(1)
+}
+
 var WebSocket = require('ws'),
     repl = require("repl"),
     urlUtil = require("url"),
@@ -9,8 +14,8 @@ var WebSocket = require('ws'),
     WebsocketWrapper = require('spacebox-common/src/websockets-wrapper.js')
 
 C.configure({
-    AUTH_URL: process.env.AUTH_URL,
-    credentials: process.env.INTERNAL_CREDS,
+    AUTH_URL: process.argv[2],
+    credentials: process.argv[3]
 })
 
 var common_setup = require('./src/common_setup.js')
@@ -18,14 +23,7 @@ var common_setup = require('./src/common_setup.js')
 var ws, ctx;
 
 function cmd(name, opts) {
-    if (opts === undefined) {
-        opts = {}
-    }
-
-    opts.command = name
-    console.log(opts)
-
-    ws.connection.send(JSON.stringify(opts))
+    ws.cmd(name, opts)
 }
 
 function handleMessage(e) {
@@ -39,12 +37,21 @@ function handleMessage(e) {
         return
     }
 
+
     switch (data.type) {
         case "state":
-            ctx.world[data.state.key] = C.deepMerge(data.state.values, ctx.world[data.state.key] || {
-                uuid: data.state.key
+            data.state.forEach(function(state) {
+                console.log('received', state)
+                if (state.values.tombstone === true) {
+                    delete ctx.world[state.key]
+                } else {
+                    ctx.world[state.key] = C.deepMerge(state.values, ctx.world[state.key] || {
+                        uuid: state.key
+                    })
+                }
+
+                console.log("updated", state.key)
             })
-            console.log("updated", data.state.key)
             break
         default:
             console.log(data)
@@ -55,7 +62,7 @@ function handleMessage(e) {
 C.getAuthToken().then(function(token) {
     console.log("authenticated, connecting")
 
-    ws  = WebsocketWrapper.get("3dsim", '/', { token: token })
+    ws  = WebsocketWrapper.get("3dsim")
     ws.onOpen(function() {
         console.log('reset the world')
         ctx.world = {}
