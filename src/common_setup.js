@@ -13,8 +13,10 @@ module.exports = function(ctx) {
                 ctx.cmd('spawnStarter');
         }).delay(1000).then(function() {
             starter = C.find(ctx.world, { name: 'Starter Ship' });
-            console.log(ctx.world)
             ctx.cmd("scanWormholes", { shipID: starter.uuid })
+        }).delay(1000).then(function() {
+            var wormhole = C.find(ctx.world, { type: 'wormhole' });
+            ctx.cmd("jumpWormhole", { shipID: starter.uuid, wormhole: wormhole.uuid })
         }).delay(1000).then(function() {
             var wormhole = C.find(ctx.world, { type: 'wormhole' });
             ctx.cmd("jumpWormhole", { shipID: starter.uuid, wormhole: wormhole.uuid })
