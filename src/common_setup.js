@@ -84,7 +84,24 @@ module.exports = function(ctx) {
             return C.request("tech", "POST", 204, "/inventory", [ { inventory: starter.uuid, slice: 'default', blueprint: metalB.uuid, quantity: -2 }, { inventory: scaffold.uuid, slice: 'default', blueprint: metalB.uuid, quantity: 2 } ]).then(ctx.logit);
         }).then(function() {
             return C.request('tech', 'POST', 201, '/jobs', { blueprint: '2424c151-645a-40d2-8601-d2f82b2cf4b8', facility: scaffold.uuid, action: 'construct', quantity: 1, slice: 'default' }).then(ctx.logit); // outpost
-        }).delay(5000).fail(function(e) {
+        }).delay(10000).then(function() {
+            return C.request("tech", "POST", 204, "/inventory", [ {
+                inventory: starter.uuid, slice: 'default', blueprint: 'd9c166f0-3c6d-11e4-801e-d5aa4697630f', quantity: -1
+            }, {
+                inventory: scaffold.uuid, slice: 'default', blueprint: 'd9c166f0-3c6d-11e4-801e-d5aa4697630f', quantity: 1
+            }, {
+                inventory: starter.uuid, slice: 'default', blueprint: '33e24278-4d46-4146-946e-58a449d5afae', quantity: -1
+            }, {
+                inventory: scaffold.uuid, slice: 'default', blueprint: '33e24278-4d46-4146-946e-58a449d5afae', quantity: 1
+            }]).then(ctx.logit);
+        }).then(function() {
+            return C.request('tech', 'POST', 201, '/jobs', {
+                blueprint: '2424c151-645a-40d2-8601-d2f82b2cf4b8', facility: scaffold.uuid, action: 'refit', slice: 'default', target: scaffold.uuid,
+                modules: [ 'd9c166f0-3c6d-11e4-801e-d5aa4697630f', '33e24278-4d46-4146-946e-58a449d5afae' ]
+            }).then(ctx.logit); // outpost
+        }).then(function() {
+            console.log("---DONE---")
+        }).fail(function(e) {
             console.log(e);
             console.log(e.stacktrace);
         }).done();
