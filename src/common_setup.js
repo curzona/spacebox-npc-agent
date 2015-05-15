@@ -6,7 +6,8 @@ var Q = require('q'),
 
 module.exports = function(ctx) {
     ctx.deployment = function() {
-        var structure = C.find(ctx.world, { name: 'Basic Outpost', }, false);
+        var desired_ship = '7abb04d3-7d58-42d8-be93-89eb486a1c67'
+        var ship_id, structure = C.find(ctx.world, { name: 'Basic Outpost', }, false)
 
         Q.fcall(function() {
             if (structure === undefined)
@@ -14,14 +15,23 @@ module.exports = function(ctx) {
         }).delay(1000).then(function() {
             structure = C.find(ctx.world, { name: 'Basic Outpost', });
 
-            return C.request("tech", "POST", 204, "/inventory", [ { inventory: structure.uuid, slice: 'default', blueprint: '6e573ecc-557b-4e05-9f3b-511b2611c474', quantity: 1 } ]).then(ctx.logit)
+            return C.request("tech", "POST", 204, "/inventory", [ { inventory: structure.uuid, slice: 'default', blueprint: desired_ship, quantity: 1 } ]).then(ctx.logit)
         }).delay(1000).then(function() {
             console.log('post to ships')
-            return C.request("tech", "POST", 200, "/ships", { inventory: structure.uuid, slice: 'default', blueprint: '6e573ecc-557b-4e05-9f3b-511b2611c474' })
+            return C.request("tech", "POST", 200, "/ships", { inventory: structure.uuid, slice: 'default', blueprint: desired_ship })
         }).delay(1000).then(function() {
-            return C.request("tech", 'GET', 200, '/ships').then(ctx.logit)
+            return C.request("tech", 'GET', 200, '/ships').
+            tap(ctx.logit).then(function(d) {
+                ship_id = ctx.ret[0].id
+            })
         }).delay(1000).then(function() {
-            ctx.cmd('undock', { ship_uuid: ctx.ret[0].id })
+            ctx.cmd('undock', { ship_uuid: ship_id })
+        }).delay(1000).then(function() {
+            ctx.cmd('dock', { ship_uuid: ship_id, inventory: structure.uuid, slice: 'default' })
+        }).delay(1000).then(function() {
+            ctx.cmd('undock', { ship_uuid: ship_id })
+        }).delay(1000).then(function() {
+            ctx.cmd('dock', { ship_uuid: ship_id, inventory: structure.uuid, slice: 'default' })
         }).delay(1000).fail(function(e) {
             console.log(e);
             console.log(e.stacktrace);
