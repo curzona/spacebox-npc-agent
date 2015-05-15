@@ -99,6 +99,11 @@ module.exports = function(ctx) {
                 blueprint: '2424c151-645a-40d2-8601-d2f82b2cf4b8', facility: scaffold.uuid, action: 'refit', slice: 'default', target: scaffold.uuid,
                 modules: [ 'd9c166f0-3c6d-11e4-801e-d5aa4697630f', '33e24278-4d46-4146-946e-58a449d5afae' ]
             }).then(ctx.logit); // outpost
+        }).delay(2000).then(function() {
+            return C.request('tech', 'POST', 201, '/jobs', {
+                blueprint: '2424c151-645a-40d2-8601-d2f82b2cf4b8', facility: scaffold.uuid, action: 'refit', slice: 'default', target: scaffold.uuid,
+                modules: [ 'd9c166f0-3c6d-11e4-801e-d5aa4697630f' ]
+            }).then(ctx.logit); // outpost
         }).then(function() {
             console.log("---DONE---")
         }).fail(function(e) {
