@@ -5,6 +5,28 @@ var Q = require('q'),
 
 
 module.exports = function(ctx) {
+    ctx.deployment = function() {
+        var structure = C.find(ctx.world, { name: 'Basic Outpost', }, false);
+
+        Q.fcall(function() {
+            if (structure === undefined)
+                ctx.cmd('spawnStructure', { blueprint: '2424c151-645a-40d2-8601-d2f82b2cf4b8' })
+        }).delay(1000).then(function() {
+            structure = C.find(ctx.world, { name: 'Basic Outpost', });
+
+            return C.request("tech", "POST", 204, "/inventory", [ { inventory: structure.uuid, slice: 'default', blueprint: '6e573ecc-557b-4e05-9f3b-511b2611c474', quantity: 1 } ]).then(ctx.logit)
+        }).delay(1000).then(function() {
+            console.log('post to ships')
+            return C.request("tech", "POST", 200, "/ships", { inventory: structure.uuid, slice: 'default', blueprint: '6e573ecc-557b-4e05-9f3b-511b2611c474' })
+        }).delay(1000).then(function() {
+            return C.request("tech", 'GET', 200, '/ships').then(ctx.logit)
+        }).delay(1000).fail(function(e) {
+            console.log(e);
+            console.log(e.stacktrace);
+        }).done()
+    
+    }
+
     ctx.scanning = function() {
         var starter = C.find(ctx.world, { name: 'Starter Ship' }, false);
 
