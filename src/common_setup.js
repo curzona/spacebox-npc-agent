@@ -20,6 +20,8 @@ module.exports = function(ctx) {
             return C.request("tech", "POST", 200, "/ships", { inventory: structure.uuid, slice: 'default', blueprint: '6e573ecc-557b-4e05-9f3b-511b2611c474' })
         }).delay(1000).then(function() {
             return C.request("tech", 'GET', 200, '/ships').then(ctx.logit)
+        }).delay(1000).then(function() {
+            ctx.cmd('undock', { ship_uuid: ctx.ret[0].id })
         }).delay(1000).fail(function(e) {
             console.log(e);
             console.log(e.stacktrace);
