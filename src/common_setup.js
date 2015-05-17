@@ -15,24 +15,32 @@ module.exports = function(ctx) {
         }).delay(1000).then(function() {
             structure = C.find(ctx.world, { name: 'Basic Outpost', })
 
-            return C.request("tech", "POST", 204, "/inventory", [ { inventory: structure.uuid, slice: 'default', blueprint: desired_ship, quantity: 1 } ]).then(ctx.logit)
-        }).delay(1000).then(function() {
+            return C.request("tech", "POST", 204, "/inventory", {
+                from_id: null, from_slice: null,
+                to_id: structure.uuid, to_slice: 'default',
+                items: [{
+                    blueprint: desired_ship, quantity: 1
+                }]
+            }).then(ctx.logit)
+        }).then(function() {
             console.log('post to ships')
             return C.request("tech", "POST", 200, "/ships", { inventory: structure.uuid, slice: 'default', blueprint: desired_ship })
-        }).delay(1000).then(function() {
+        }).then(function() {
             return C.request("tech", 'GET', 200, '/ships').
             tap(ctx.logit).then(function(d) {
                 ship_id = ctx.ret[0].id
             })
-        }).delay(1000).then(function() {
+        }).then(function() {
             ctx.cmd('undock', { ship_uuid: ship_id })
         }).delay(1000).then(function() {
             ctx.cmd('dock', { ship_uuid: ship_id, inventory: structure.uuid, slice: 'default' })
-        }).delay(1000).then(function() {
+        /*}).delay(1000).then(function() {
             ctx.cmd('undock', { ship_uuid: ship_id })
         }).delay(1000).then(function() {
-            ctx.cmd('dock', { ship_uuid: ship_id, inventory: structure.uuid, slice: 'default' })
-        }).delay(1000).fail(function(e) {
+            ctx.cmd('dock', { ship_uuid: ship_id, inventory: structure.uuid, slice: 'default' }) */
+        }).then(function() {
+            console.log("---DONE---")
+        }).fail(function(e) {
             console.log(e)
             console.log(e.stacktrace)
         }).done()
@@ -84,8 +92,13 @@ module.exports = function(ctx) {
             ctx.cmd('deploy', { shipID: starter.uuid, slice: 'default', blueprint: scaffoldB.uuid })
         }).delay(2000).then(function() {
             scaffold = C.find(ctx.world, { name: 'Basic Scaffold' })
+            console.log(ctx.world)
 
-            return C.request("tech", "POST", 204, "/inventory", [ { inventory: starter.uuid, slice: 'default', blueprint: metalB.uuid, quantity: -2 }, { inventory: scaffold.uuid, slice: 'default', blueprint: metalB.uuid, quantity: 2 } ]).then(ctx.logit)
+            return C.request("tech", "POST", 204, "/inventory", {
+                from_id: starter.uuid, from_slice: 'default',
+                to_id: scaffold.uuid, to_slice: 'default',
+                items: [{ blueprint: metalB.uuid, quantity: 2 }]
+            }).then(ctx.logit)
         }).then(function() {
         }).then(function() {
             return C.request("tech", 'GET', 200, '/facilities').tap(ctx.logit).then(function(facilities) {
@@ -93,15 +106,15 @@ module.exports = function(ctx) {
                 return C.request('tech', 'POST', 201, '/jobs', { blueprint: '2424c151-645a-40d2-8601-d2f82b2cf4b8', facility: facility.id, action: 'construct', quantity: 1, slice: 'default' }).then(ctx.logit) // outpost
             })
         }).delay(10000).then(function() {
-            return C.request("tech", "POST", 204, "/inventory", [ {
-                inventory: starter.uuid, slice: 'default', blueprint: 'd9c166f0-3c6d-11e4-801e-d5aa4697630f', quantity: -1
-            }, {
-                inventory: scaffold.uuid, slice: 'default', blueprint: 'd9c166f0-3c6d-11e4-801e-d5aa4697630f', quantity: 1
-            }, {
-                inventory: starter.uuid, slice: 'default', blueprint: '33e24278-4d46-4146-946e-58a449d5afae', quantity: -1
-            }, {
-                inventory: scaffold.uuid, slice: 'default', blueprint: '33e24278-4d46-4146-946e-58a449d5afae', quantity: 1
-            }]).then(ctx.logit)
+            return C.request("tech", "POST", 204, "/inventory", {
+                from_id: starter.uuid, from_slice: 'default',
+                to_id: scaffold.uuid, to_slice: 'default',
+                items: [{
+                    blueprint: 'd9c166f0-3c6d-11e4-801e-d5aa4697630f', quantity: 1
+                }, {
+                    blueprint: '33e24278-4d46-4146-946e-58a449d5afae', quantity: 1
+                }]
+            }).then(ctx.logit)
         }).then(function() {
             return C.request("tech", 'GET', 200, '/facilities').tap(ctx.logit).then(function(facilities) {
                 var facility = C.find(facilities, { inventory_id: scaffold.uuid }) // it's an outpost now
