@@ -100,7 +100,6 @@ module.exports = function(ctx) {
                 items: [{ blueprint: metalB.uuid, quantity: 2 }]
             }).then(ctx.logit)
         }).then(function() {
-        }).then(function() {
             return C.request("tech", 'GET', 200, '/facilities').tap(ctx.logit).then(function(facilities) {
                 var facility = C.find(facilities, { inventory_id: scaffold.uuid }) // the scaffold only has one, but things can have multiple facilities
                 return C.request('tech', 'POST', 201, '/jobs', { blueprint: '2424c151-645a-40d2-8601-d2f82b2cf4b8', facility: facility.id, action: 'construct', quantity: 1, slice: 'default' }).then(ctx.logit) // outpost
