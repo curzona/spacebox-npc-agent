@@ -85,7 +85,7 @@ module.exports = function(ctx) {
                 return Q.all([
                     C.request('tech', 'POST', 201, '/jobs', { blueprint: scaffoldB.uuid, facility: facility.id, action: 'manufacture', quantity: 1, slice: 'default' }).then(ctx.logit),
                     C.request('tech', 'POST', 201, '/jobs', { blueprint: 'd9c166f0-3c6d-11e4-801e-d5aa4697630f', facility: facility.id, action: 'manufacture', quantity: 1, slice: 'default' }).then(ctx.logit), // factory
-                    C.request('tech', 'POST', 201, '/jobs', { blueprint: '33e24278-4d46-4146-946e-58a449d5afae', facility: facility.id, action: 'manufacture', quantity: 1, slice: 'default' }).then(ctx.logit), // ore mine
+                    C.request('tech', 'POST', 201, '/jobs', { blueprint: '33e24278-4d46-4146-946e-58a449d5afae', facility: facility.id, action: 'manufacture', quantity: 2, slice: 'default' }).then(ctx.logit), // ore mine
                 ])
             })
         }).delay(10000).then(function() {
@@ -111,7 +111,7 @@ module.exports = function(ctx) {
                 items: [{
                     blueprint: 'd9c166f0-3c6d-11e4-801e-d5aa4697630f', quantity: 1
                 }, {
-                    blueprint: '33e24278-4d46-4146-946e-58a449d5afae', quantity: 1
+                    blueprint: '33e24278-4d46-4146-946e-58a449d5afae', quantity: 2
                 }]
             }).then(ctx.logit)
         }).then(function() {
@@ -120,7 +120,7 @@ module.exports = function(ctx) {
 
                 return C.request('tech', 'POST', 201, '/jobs', {
                     blueprint: '2424c151-645a-40d2-8601-d2f82b2cf4b8', facility: facility.id, action: 'refit', slice: 'default', target: scaffold.uuid,
-                    modules: [ 'd9c166f0-3c6d-11e4-801e-d5aa4697630f', '33e24278-4d46-4146-946e-58a449d5afae' ]
+                    modules: [ 'd9c166f0-3c6d-11e4-801e-d5aa4697630f', '33e24278-4d46-4146-946e-58a449d5afae', '33e24278-4d46-4146-946e-58a449d5afae' ]
                 }).then(ctx.logit) // outpost
             })
         }).delay(2000).then(function() {
@@ -130,7 +130,7 @@ module.exports = function(ctx) {
                 var facility = C.find(facilities, { inventory_id: scaffold.uuid, blueprint: '2424c151-645a-40d2-8601-d2f82b2cf4b8' }) // there are multiple now, we need the outpost facility
                 return C.request('tech', 'POST', 201, '/jobs', {
                     blueprint: '2424c151-645a-40d2-8601-d2f82b2cf4b8', facility: facility.id, action: 'refit', slice: 'default', target: scaffold.uuid,
-                    modules: [ 'd9c166f0-3c6d-11e4-801e-d5aa4697630f' ]
+                    modules: [ 'd9c166f0-3c6d-11e4-801e-d5aa4697630f', '33e24278-4d46-4146-946e-58a449d5afae' ]
                 }).then(ctx.logit) // outpost
             })
         }).delay(2000).then(function() {

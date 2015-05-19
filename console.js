@@ -68,6 +68,10 @@ C.getAuthToken().then(function(token) {
         ctx.world = {}
     })
     ws.on('message', handleMessage)
+
+    WebsocketWrapper.get("tech").on('message', function(msg) {
+        console.log(msg.data)
+    })
 }).done()
 
 var r = repl.start({})
