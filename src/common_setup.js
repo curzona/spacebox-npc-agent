@@ -5,15 +5,56 @@ var Q = require('q'),
 
 
 module.exports = function(ctx) {
-    ctx.deployment = function() {
+    ctx.destroy_structure = function() {
         var desired_ship = '7abb04d3-7d58-42d8-be93-89eb486a1c67'
-        var ship_id, structure = C.find(ctx.world, { name: 'Basic Outpost', }, false)
+        var ship_id, structure = C.find(ctx.world, { name: 'Basic Outpost', account: ctx.acount }, false)
 
         Q.fcall(function() {
             if (structure === undefined)
                 ctx.cmd('spawnStructure', { blueprint: '2424c151-645a-40d2-8601-d2f82b2cf4b8' })
         }).delay(1000).then(function() {
-            structure = C.find(ctx.world, { name: 'Basic Outpost', })
+            structure = C.find(ctx.world, { name: 'Basic Outpost', account: ctx.account })
+
+            return C.request("tech", "POST", 204, "/inventory", {
+                from_id: null, from_slice: null,
+                to_id: structure.uuid, to_slice: 'default',
+                items: [{
+                    blueprint: desired_ship, quantity: 1
+                }]
+            }).then(ctx.logit)
+        }).then(function() {
+            console.log('post to ships')
+            return C.request("tech", "POST", 200, "/ships", { inventory: structure.uuid, slice: 'default', blueprint: desired_ship })
+        }).then(function() {
+            return C.request("tech", 'GET', 200, '/ships').
+            tap(ctx.logit).then(function(d) {
+                ship_id = ctx.ret[0].id
+            })
+        }).then(function() {
+            ctx.cmd('undock', { ship_uuid: ship_id })
+        }).delay(1000).then(function() {
+            ctx.cmd('shoot', {
+                subject: ship_id,
+                target: structure.uuid,
+            });
+        }).then(function() {
+            console.log("---DONE---")
+        }).fail(function(e) {
+            console.log(e)
+            console.log(e.stacktrace)
+        }).done()
+    
+    }
+
+    ctx.deployment = function() {
+        var desired_ship = '7abb04d3-7d58-42d8-be93-89eb486a1c67'
+        var ship_id, structure = C.find(ctx.world, { name: 'Basic Outpost', account: ctx.account }, false)
+
+        Q.fcall(function() {
+            if (structure === undefined)
+                ctx.cmd('spawnStructure', { blueprint: '2424c151-645a-40d2-8601-d2f82b2cf4b8' })
+        }).delay(1000).then(function() {
+            structure = C.find(ctx.world, { name: 'Basic Outpost', account: ctx.account })
 
             return C.request("tech", "POST", 204, "/inventory", {
                 from_id: null, from_slice: null,
@@ -48,19 +89,19 @@ module.exports = function(ctx) {
     }
 
     ctx.scanning = function() {
-        var starter = C.find(ctx.world, { name: 'Starter Ship' }, false)
+        var starter = C.find(ctx.world, { name: 'Starter Ship', account: ctx.account }, false)
 
         Q.fcall(function() {
             if (starter === undefined)
                 ctx.cmd('spawnStarter')
         }).delay(1000).then(function() {
-            starter = C.find(ctx.world, { name: 'Starter Ship' })
+            starter = C.find(ctx.world, { name: 'Starter Ship', account: ctx.account })
             ctx.cmd("scanWormholes", { shipID: starter.uuid })
         }).delay(1000).then(function() {
-            var wormhole = C.find(ctx.world, { type: 'wormhole' })
+            var wormhole = C.find(ctx.world, { type: 'wormhole', account: ctx.account })
             ctx.cmd("jumpWormhole", { shipID: starter.uuid, wormhole: wormhole.uuid })
         }).delay(1000).then(function() {
-            var wormhole = C.find(ctx.world, { type: 'wormhole' })
+            var wormhole = C.find(ctx.world, { type: 'wormhole', account: ctx.account })
             ctx.cmd("jumpWormhole", { shipID: starter.uuid, wormhole: wormhole.uuid })
         }).delay(1000).fail(function(e) {
             console.log(e)
@@ -77,7 +118,7 @@ module.exports = function(ctx) {
             if (starter === undefined)
                 ctx.cmd('spawnStarter')
         }).delay(1000).then(function() {
-            starter = C.find(ctx.world, { name: 'Starter Ship' })
+            starter = C.find(ctx.world, { name: 'Starter Ship' , account: ctx.account})
 
             return C.request("tech", 'GET', 200, '/facilities').tap(ctx.logit).then(function(facilities) {
                 var facility = C.find(facilities, { inventory_id: starter.uuid })
@@ -90,9 +131,12 @@ module.exports = function(ctx) {
             })
         }).delay(10000).then(function() {
             ctx.cmd('deploy', { shipID: starter.uuid, slice: 'default', blueprint: scaffoldB.uuid })
-        }).delay(2000).then(function() {
-            scaffold = C.find(ctx.world, { name: 'Basic Scaffold' })
+        }).delay(1000).then(function() {
+            scaffold = C.find(ctx.world, { name: 'Basic Scaffold' , account: ctx.account})
             console.log(ctx.world)
+
+            ctx.cmd('dock', { ship_uuid: starter.uuid, inventory: scaffold.uuid, slice: 'default' })
+        }).delay(1000).then(function() {
 
             return C.request("tech", "POST", 204, "/inventory", {
                 from_id: starter.uuid, from_slice: 'default',
@@ -135,6 +179,13 @@ module.exports = function(ctx) {
             })
         }).delay(2000).then(function() {
             return C.request("tech", 'GET', 200, '/facilities').then(ctx.logit)
+        }).then(function() {
+            ctx.cmd('undock', { ship_uuid: starter.uuid })
+        }).delay(1000).then(function() {
+            ctx.cmd('shoot', {
+                subject: starter.uuid,
+                target: scaffold.uuid,
+            });
         }).then(function() {
             console.log("---DONE---")
         }).fail(function(e) {

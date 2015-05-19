@@ -13,6 +13,8 @@ var WebSocket = require('ws'),
     C = require('spacebox-common'),
     WebsocketWrapper = require('spacebox-common/src/websockets-wrapper.js')
 
+WebsocketWrapper.registerPath('3dsim', '/temporary')
+
 C.configure({
     AUTH_URL: process.argv[2],
     credentials: process.argv[3]
@@ -52,6 +54,11 @@ function handleMessage(e) {
 
                 console.log("updated", state.key)
             })
+            break
+        case "tempAccount":
+            console.log("new credentials received", data.auth)
+            C.setAuth(data.auth)
+            ctx.account = data.auth.account
             break
         default:
             console.log(data)
