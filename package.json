@@ -17,6 +17,7 @@
   },
   "jshintConfig": {
     "node": true,
+    "newcap": false,
     "asi": true
   }
 }

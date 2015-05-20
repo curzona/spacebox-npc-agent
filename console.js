@@ -10,6 +10,7 @@ if (process.argv[3] === undefined) {
 var WebSocket = require('ws'),
     repl = require("repl"),
     urlUtil = require("url"),
+    Q = require('q'),
     C = require('spacebox-common'),
     WebsocketWrapper = require('spacebox-common/src/websockets-wrapper.js')
 
@@ -26,6 +27,7 @@ function cmd(name, opts) {
     ws.cmd(name, opts)
 }
 
+var worldPromises = []
 function handleMessage(e) {
     var data
 
@@ -42,20 +44,56 @@ function handleMessage(e) {
         case "state":
             data.state.forEach(function(state) {
                 console.log('received', state)
-                if (state.values.tombstone === true) {
-                    delete ctx.world[state.key]
-                } else {
-                    ctx.world[state.key] = C.deepMerge(state.values, ctx.world[state.key] || {
-                        uuid: state.key
-                    })
-                }
+                ctx.world[state.key] = C.deepMerge(state.values, ctx.world[state.key] || {
+                    uuid: state.key
+                })
+
+                var fake = {}
+                fake[state.key] = ctx.world[state.key]
+                worldPromises.forEach(function(pair, i) {
+                    var result = C.find(fake, pair.query, false)
+                    if (result !== undefined ) {
+                        pair.promise.resolve(result)
+                        worldPromises.splice(i, 1)
+                    }
+                })
 
                 console.log("updated", state.key)
+
+                if (state.values.tombstone === true)
+                    delete ctx.world[state.key]
             })
             break
         default:
             console.log(data)
             break
+    }
+}
+
+var jobPromises = {}
+function handleTechMessage(e) {
+    var data
+
+    try {
+        data = JSON.parse(e.data)
+    } catch (error) {
+        console.log(error)
+        console.log("invalid json: %s", e.data)
+        return
+    }
+
+    console.log(data)
+
+    switch (data.type) {
+        case "job":
+            if (data.state == 'delivered') {
+                var p = jobPromises[data.uuid]
+                if (p !== undefined) {
+                    delete jobPromises[data.uuid]
+                    p.resolve(data)
+                }
+            }
+            break;
     }
 }
 
@@ -69,9 +107,7 @@ C.getAuthToken().then(function(token) {
     })
     ws.on('message', handleMessage)
 
-    WebsocketWrapper.get("tech").on('message', function(msg) {
-        console.log(msg.data)
-    })
+    WebsocketWrapper.get("tech").on('message', handleTechMessage)
 }).done()
 
 var r = repl.start({})
@@ -85,6 +121,29 @@ r.on('exit', function () {
 
 C.deepMerge({
     logit: function(arg) { r.context.ret  = arg; console.log(arg); return arg },
+    wait_for_job: function(uuid) {
+        var deferred = Q.defer()
+
+        jobPromises[uuid] = deferred
+
+        return deferred.promise
+    },
+    wait_for_world: function(opts) {
+        var result = C.find(ctx.world, opts, false)
+
+        if (result !== undefined) {
+            return Q(result)
+        } else {
+            var deferred = Q.defer()
+
+            worldPromises.push({
+                query: opts,
+                promise: deferred
+            })
+
+            return deferred.promise
+        }
+    },
     cmd: cmd,
     C: C
 }, r.context)
