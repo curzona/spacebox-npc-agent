@@ -78,11 +78,6 @@ module.exports = function(ctx) {
         }).then(function() {
             return ctx.wait_for_world({ uuid: starter.uuid })
         }).then(function() {
-            ctx.cmd('shoot', {
-                subject: starter.uuid,
-                target: scaffold.uuid,
-            });
-        }).then(function() {
             console.log("---DONE---")
         }).fail(function(e) {
             console.log(e)
