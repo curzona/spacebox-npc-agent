@@ -110,14 +110,15 @@ module.exports = function(ctx) {
     }
 
     ctx.basic_setup = function() {
-        var starter, scaffold,
+        var scaffold,
+            starter = C.find(ctx.world, { name: 'Starter Ship', account: ctx.account }, false),
             scaffoldB = C.find(ctx.blueprints, { name: 'Basic Scaffold' }),
             metalB = C.find(ctx.blueprints, { name: 'Metal' })
 
         Q.fcall(function() {
             if (starter === undefined)
                 ctx.cmd('spawnStarter')
-        }).delay(1000).then(function() {
+        }).delay(6000).then(function() {
             starter = C.find(ctx.world, { name: 'Starter Ship' , account: ctx.account})
 
             return C.request("tech", 'GET', 200, '/facilities').tap(ctx.logit).then(function(facilities) {
@@ -129,14 +130,14 @@ module.exports = function(ctx) {
                     C.request('tech', 'POST', 201, '/jobs', { blueprint: '33e24278-4d46-4146-946e-58a449d5afae', facility: facility.id, action: 'manufacture', quantity: 2, slice: 'default' }).then(ctx.logit), // ore mine
                 ])
             })
-        }).delay(10000).then(function() {
+        }).delay(20000).then(function() {
             ctx.cmd('deploy', { shipID: starter.uuid, slice: 'default', blueprint: scaffoldB.uuid })
-        }).delay(1000).then(function() {
+        }).delay(3000).then(function() {
             scaffold = C.find(ctx.world, { name: 'Basic Scaffold' , account: ctx.account})
             console.log(ctx.world)
 
             ctx.cmd('dock', { ship_uuid: starter.uuid, inventory: scaffold.uuid, slice: 'default' })
-        }).delay(1000).then(function() {
+        }).delay(3000).then(function() {
 
             return C.request("tech", "POST", 204, "/inventory", {
                 from_id: starter.uuid, from_slice: 'default',

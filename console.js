@@ -13,8 +13,6 @@ var WebSocket = require('ws'),
     C = require('spacebox-common'),
     WebsocketWrapper = require('spacebox-common/src/websockets-wrapper.js')
 
-WebsocketWrapper.registerPath('3dsim', '/temporary')
-
 C.configure({
     AUTH_URL: process.argv[2],
     credentials: process.argv[3]
@@ -55,11 +53,6 @@ function handleMessage(e) {
                 console.log("updated", state.key)
             })
             break
-        case "tempAccount":
-            console.log("new credentials received", data.auth)
-            C.setAuth(data.auth)
-            ctx.account = data.auth.account
-            break
         default:
             console.log(data)
             break
@@ -97,6 +90,8 @@ C.deepMerge({
 }, r.context)
 
 common_setup(ctx)
+
+ctx.account = process.argv[3].split(':')[0]
 
 C.getBlueprints().then(function(b) {
     ctx.blueprints = b
