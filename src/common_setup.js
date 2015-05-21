@@ -26,7 +26,7 @@ module.exports = function(ctx) {
                 return Q.all([
                     C.request('tech', 'POST', 201, '/jobs', { blueprint: scaffoldB.uuid, facility: facility.id, action: 'manufacture', quantity: 1, slice: 'default' }).then(function(resp) { return ctx.wait_for_job(resp.job.uuid) }),
                     C.request('tech', 'POST', 201, '/jobs', { blueprint: 'd9c166f0-3c6d-11e4-801e-d5aa4697630f', facility: facility.id, action: 'manufacture', quantity: 1, slice: 'default' }).then(function(resp) { return ctx.wait_for_job(resp.job.uuid) }),
-                    C.request('tech', 'POST', 201, '/jobs', { blueprint: '33e24278-4d46-4146-946e-58a449d5afae', facility: facility.id, action: 'manufacture', quantity: 2, slice: 'default' }).then(function(resp) { return ctx.wait_for_job(resp.job.uuid) })
+                    C.request('tech', 'POST', 201, '/jobs', { blueprint: '33e24278-4d46-4146-946e-58a449d5afae', facility: facility.id, action: 'manufacture', quantity: 1, slice: 'default' }).then(function(resp) { return ctx.wait_for_job(resp.job.uuid) })
                 ])
             })
         }).then(function() {
@@ -45,7 +45,7 @@ module.exports = function(ctx) {
             return C.request("tech", "POST", 204, "/inventory", {
                 from_id: starter.uuid, from_slice: 'default',
                 to_id: scaffold.uuid, to_slice: 'default',
-                items: [{ blueprint: metalB.uuid, quantity: 2 }]
+                items: [{ blueprint: metalB.uuid, quantity: 5 }]
             }).then(ctx.logit)
         }).then(function() {
             return C.request("tech", 'GET', 200, '/facilities').tap(ctx.logit).then(function(facilities) {
@@ -59,7 +59,7 @@ module.exports = function(ctx) {
                 items: [{
                     blueprint: 'd9c166f0-3c6d-11e4-801e-d5aa4697630f', quantity: 1
                 }, {
-                    blueprint: '33e24278-4d46-4146-946e-58a449d5afae', quantity: 2
+                    blueprint: '33e24278-4d46-4146-946e-58a449d5afae', quantity: 1
                 }]
             }).then(ctx.logit)
         }).then(function() {
@@ -68,7 +68,7 @@ module.exports = function(ctx) {
 
                 return C.request('tech', 'POST', 201, '/jobs', {
                     blueprint: '2424c151-645a-40d2-8601-d2f82b2cf4b8', facility: facility.id, action: 'refit', slice: 'default', target: scaffold.uuid,
-                    modules: [ 'd9c166f0-3c6d-11e4-801e-d5aa4697630f', '33e24278-4d46-4146-946e-58a449d5afae', '33e24278-4d46-4146-946e-58a449d5afae' ]
+                    modules: [ 'd9c166f0-3c6d-11e4-801e-d5aa4697630f', '33e24278-4d46-4146-946e-58a449d5afae' ]
                 }).then(function(resp) { return ctx.wait_for_job(resp.job.uuid) })
             })
         }).then(function() {
