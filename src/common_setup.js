@@ -7,15 +7,15 @@ var Q = require('q'),
 module.exports = function(ctx) {
     ctx.basic_setup = function() {
         var scaffold,
-            starter = C.find(ctx.world, { name: 'Starter Ship', account: ctx.account }, false),
-            scaffoldB = C.find(ctx.blueprints, { name: 'Basic Scaffold' }),
+            starter = C.find(ctx.world, { name: 'Industrial Seed Ship', account: ctx.account }, false),
+            crateB = C.find(ctx.blueprints, { name: 'Space Crate' }),
             metalB = C.find(ctx.blueprints, { name: 'Metal' })
 
         Q.fcall(function() {
             if (starter === undefined)
                 ctx.cmd('spawnStarter')
         }).then(function() {
-            return ctx.wait_for_world({ name: 'Starter Ship' , account: ctx.account})
+            return ctx.wait_for_world({ name: 'Industrial Seed Ship' , account: ctx.account})
         }).then(function(result) {
             starter = result
 
@@ -23,13 +23,13 @@ module.exports = function(ctx) {
                 var facility = C.find(facilities, { inventory_id: starter.uuid, blueprint: "964e7711-9341-429c-866a-73ee5ce34544" })
 
                 return Q.all([
-                    C.request('tech', 'POST', 201, '/jobs', { blueprint: scaffoldB.uuid, facility: facility.id, action: 'manufacturing', quantity: 1, slice: 'default' }).then(function(resp) { return ctx.wait_for_job(resp.job.uuid) }),
+                    C.request('tech', 'POST', 201, '/jobs', { blueprint: crateB.uuid, facility: facility.id, action: 'manufacturing', quantity: 1, slice: 'default' }).then(function(resp) { return ctx.wait_for_job(resp.job.uuid) }),
                     C.request('tech', 'POST', 201, '/jobs', { blueprint: 'd9c166f0-3c6d-11e4-801e-d5aa4697630f', facility: facility.id, action: 'manufacturing', quantity: 1, slice: 'default' }).then(function(resp) { return ctx.wait_for_job(resp.job.uuid) }),
                     C.request('tech', 'POST', 201, '/jobs', { blueprint: '33e24278-4d46-4146-946e-58a449d5afae', facility: facility.id, action: 'manufacturing', quantity: 1, slice: 'default' }).then(function(resp) { return ctx.wait_for_job(resp.job.uuid) })
                 ])
             })
         }).then(function() {
-            ctx.cmd('deploy', { blueprint: scaffoldB.uuid, container_id: starter.uuid, slice: 'default', })
+            ctx.cmd('deploy', { blueprint: crateB.uuid, container_id: starter.uuid, slice: 'default', })
         }).then(function() {
             return ctx.wait_for_world({ name: 'Basic Scaffold' , account: ctx.account})
         }).then(function(result) {
@@ -145,7 +145,7 @@ module.exports = function(ctx) {
     ctx.test_code = function() {
         var scaffold,
             starter = C.find(ctx.world, { name: 'Starter Ship', account: ctx.account }, false),
-            scaffoldB = C.find(ctx.blueprints, { name: 'Basic Scaffold' }),
+            crateB = C.find(ctx.blueprints, { name: 'Basic Scaffold' }),
             metalB = C.find(ctx.blueprints, { name: 'Metal' })
 
         Q.fcall(function() {
@@ -159,10 +159,10 @@ module.exports = function(ctx) {
             return C.request("tech", 'GET', 200, '/facilities').tap(ctx.logit).then(function(facilities) {
                 var facility = C.find(facilities, { inventory_id: starter.uuid, blueprint: "964e7711-9341-429c-866a-73ee5ce34544" })
 
-                return C.request('tech', 'POST', 201, '/jobs', { blueprint: scaffoldB.uuid, facility: facility.id, action: 'manufacturing', quantity: 1, slice: 'default' }).then(function(resp) { return ctx.wait_for_job(resp.job.uuid) })
+                return C.request('tech', 'POST', 201, '/jobs', { blueprint: crateB.uuid, facility: facility.id, action: 'manufacturing', quantity: 1, slice: 'default' }).then(function(resp) { return ctx.wait_for_job(resp.job.uuid) })
             })
         }).then(function() {
-            ctx.cmd('deploy', { blueprint: scaffoldB.uuid, container_id: starter.uuid, slice: 'default', })
+            ctx.cmd('deploy', { blueprint: crateB.uuid, container_id: starter.uuid, slice: 'default', })
         }).then(function() {
             return ctx.wait_for_world({ name: 'Basic Scaffold' , account: ctx.account})
         }).then(function(result) {
