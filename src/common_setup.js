@@ -6,6 +6,70 @@ var Q = require('q'),
 
 module.exports = function(ctx) {
     ctx.basic_setup = function() {
+        var crate,
+            starter = C.find(ctx.world, { name: 'Industrial Seed Ship', account: ctx.account }, false),
+            crateB = C.find(ctx.blueprints, { name: 'Space Crate' }),
+            factoryB = C.find(ctx.blueprints, { name: 'Basic Factory' }),
+            metalB = C.find(ctx.blueprints, { name: 'Metal' })
+
+        Q.fcall(function() {
+            if (starter === undefined)
+                ctx.cmd('spawnStarter')
+        }).then(function() {
+            return ctx.wait_for_world({ name: 'Industrial Seed Ship' , account: ctx.account})
+        }).then(function(result) {
+            starter = result
+
+            return C.request("tech", 'GET', 200, '/facilities').tap(ctx.logit).then(function(facilities) {
+                var factory = C.find(facilities, { inventory_id: starter.uuid, blueprint: factoryB.uuid })
+
+                return Q.all([
+                    C.request('tech', 'POST', 201, '/jobs', { blueprint: crateB.uuid, facility: factory.id, action: 'manufacturing', quantity: 1, slice: 'default' }).then(function(resp) { return ctx.wait_for_job(resp.job.uuid) }),
+                    C.request('tech', 'POST', 201, '/jobs', { blueprint: factoryB.uuid, facility: factory.id, action: 'manufacturing', quantity: 1, slice: 'default' }).then(function(resp) { return ctx.wait_for_job(resp.job.uuid) })
+                ])
+            })
+        }).then(function() {
+            ctx.cmd('deploy', { blueprint: crateB.uuid, container_id: starter.uuid, slice: 'default', })
+        }).then(function() {
+            return ctx.wait_for_world({ name: 'Space Crate' , account: ctx.account})
+        }).then(function(result) {
+            crate = result
+            console.log(ctx.world)
+
+            ctx.cmd('dock', { vessel_uuid: starter.uuid, inventory: crate.uuid, slice: 'default' })
+        }).then(function() {
+            return ctx.wait_for_world({ uuid: starter.uuid , tombstone: true })
+        }).then(function() {
+
+            return C.request("tech", "POST", 204, "/inventory", {
+                from_id: starter.uuid, from_slice: 'default',
+                to_id: crate.uuid, to_slice: 'default',
+                items: [{
+                    blueprint: metalB.uuid, quantity: 5
+                }, {
+                    blueprint: factoryB.uuid, quantity: 1
+                }]
+            }).then(ctx.logit)
+        }).then(function(result) {
+            starter = result
+
+            return C.request("tech", 'GET', 200, '/facilities').tap(ctx.logit).then(function(facilities) {
+                var facility = C.find(facilities, { inventory_id: crate.uuid, blueprint: crateB.uuid })
+
+                return C.request('tech', 'POST', 201, '/jobs', {
+                    blueprint: crateB.uuid, facility: facility.id, action: 'construction', quantity: 1, slice: 'default',
+                    modules: [ factoryB.uuid ]
+                }).then(function(resp) { return ctx.wait_for_job(resp.job.uuid) })
+            })
+        }).then(function() {
+            console.log("---DONE---")
+        }).fail(function(e) {
+            console.log(e)
+            console.log(e.stacktrace)
+        }).done()
+    }
+
+    ctx.old_basic_setup = function() {
         var scaffold,
             starter = C.find(ctx.world, { name: 'Industrial Seed Ship', account: ctx.account }, false),
             crateB = C.find(ctx.blueprints, { name: 'Space Crate' }),

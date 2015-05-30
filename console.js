@@ -104,6 +104,11 @@ C.getAuthToken().then(function(token) {
     ws.onOpen(function() {
         console.log('reset the world')
         ctx.world = {}
+
+        C.getBlueprints().then(function(b) {
+            ctx.blueprints = b
+            console.log("Blueprints loaded")
+        })
     })
     ws.on('message', handleMessage)
 
@@ -151,10 +156,3 @@ C.deepMerge({
 common_setup(ctx)
 
 ctx.account = process.argv[3].split(':')[0]
-
-C.getBlueprints().then(function(b) {
-    ctx.blueprints = b
-    console.log("Blueprints loaded")
-})
-
-
