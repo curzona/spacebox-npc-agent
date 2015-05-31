@@ -24,6 +24,7 @@ var common_setup = require('./src/common_setup.js')
 var ws, ctx;
 
 function cmd(name, opts) {
+    console.log(name, opts)
     ws.cmd(name, opts)
 }
 
@@ -105,6 +106,7 @@ C.getAuthToken().then(function(token) {
         console.log('reset the world')
         ctx.world = {}
 
+        C.getBlueprints.reset()
         C.getBlueprints().then(function(b) {
             ctx.blueprints = b
             console.log("Blueprints loaded")
@@ -131,9 +133,11 @@ C.deepMerge({
 
         jobPromises[uuid] = deferred
 
+        console.log("waiting for job", uuid)
         return deferred.promise
     },
     wait_for_world: function(opts) {
+        console.log("waiting for world", opts)
         var result = C.find(ctx.world, opts, false)
 
         if (result !== undefined) {
