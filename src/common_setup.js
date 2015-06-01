@@ -82,11 +82,11 @@ module.exports = function(ctx) {
             return ctx.wait_for_world({ uuid: drone_id })
         }).then(function() {
             ctx.cmd('move_to', { subject: drone_id, target: { x: 20, y: 0, z: 0 } })
-        /*}).delay(10000).then(function() {
+        }).delay(10000).then(function() {
             ctx.cmd('shoot', {
                 subject: drone_id,
                 target: crate.uuid,
-            }); */
+            });
         }).then(function() {
             console.log("---DONE---")
         }).fail(function(e) {
