@@ -45,6 +45,7 @@ function handleMessage(e) {
         case "state":
             data.state.forEach(function(state) {
                 console.log('received', state)
+                console.log('received', state.values)
                 ctx.world[state.key] = C.deepMerge(state.values, ctx.world[state.key] || {
                     uuid: state.key
                 })
@@ -52,8 +53,8 @@ function handleMessage(e) {
                 var fake = {}
                 fake[state.key] = ctx.world[state.key]
                 worldPromises.forEach(function(pair, i) {
-                    var result = C.find(fake, pair.query, false)
-                    if (result !== undefined ) {
+                    var result = pair.fn(fake)
+                    if (result !== undefined) {
                         pair.promise.resolve(result)
                         worldPromises.splice(i, 1)
                     }
@@ -138,7 +139,12 @@ C.deepMerge({
     },
     wait_for_world: function(opts) {
         console.log("waiting for world", opts)
-        var result = C.find(ctx.world, opts, false)
+        return ctx.wait_for_world_fn(function (data) {
+            return C.find(data, opts, false)
+        })
+    },
+    wait_for_world_fn: function(fn) {
+        var result = fn(ctx.world)
 
         if (result !== undefined) {
             return Q(result)
@@ -146,7 +152,7 @@ C.deepMerge({
             var deferred = Q.defer()
 
             worldPromises.push({
-                query: opts,
+                fn: fn,
                 promise: deferred
             })
 
