@@ -26,6 +26,7 @@ var ws, ctx;
 function cmd(name, opts) {
     console.log(name, opts)
     ws.cmd(name, opts)
+    return  ctx // for invoke chaining
 }
 
 var worldPromises = []
@@ -54,7 +55,7 @@ function handleMessage(e) {
                 fake[state.key] = ctx.world[state.key]
                 worldPromises.forEach(function(pair, i) {
                     var result = pair.fn(fake)
-                    if (result !== undefined) {
+                    if (result !== undefined && result !== false) {
                         pair.promise.resolve(result)
                         worldPromises.splice(i, 1)
                     }
@@ -146,7 +147,7 @@ C.deepMerge({
     wait_for_world_fn: function(fn) {
         var result = fn(ctx.world)
 
-        if (result !== undefined) {
+        if (result !== undefined && result !== false) {
             return Q(result)
         } else {
             var deferred = Q.defer()

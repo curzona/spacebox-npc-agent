@@ -1,8 +1,12 @@
 'use strict';
 
 var Q = require('q'),
+    THREE = require('three'),
+    th = require('spacebox-common/src/three_helpers.js'),
     C = require('spacebox-common')
 
+var position1 = new THREE.Vector3(),
+    position2 = new THREE.Vector3()
 
 module.exports = function(ctx) {
 
@@ -16,7 +20,7 @@ module.exports = function(ctx) {
             return ctx.wait_for_world({ name: 'Industrial Seed Ship' , account: ctx.account})
         }).then(function(result) {
             starter = result
-            ctx.cmd('move_to', { subject: starter.uuid, target: { x: 20, y: 0, z: 0 } })
+            ctx.cmd('move_to', { vessel: starter.uuid, target: { x: 20, y: 0, z: 0 } })
         }).then(function() {
             console.log("---DONE---")
         }).fail(function(e) {
@@ -81,10 +85,10 @@ module.exports = function(ctx) {
         }).then(function() {
             return ctx.wait_for_world({ uuid: drone_id })
         }).then(function() {
-            ctx.cmd('move_to', { subject: drone_id, target: { x: 20, y: 0, z: 0 } })
+            ctx.cmd('move_to', { vessel: drone_id, target: { x: 20, y: 0, z: 0 } })
         }).delay(10000).then(function() {
             ctx.cmd('shoot', {
-                subject: drone_id,
+                vessel: drone_id,
                 target: crate.uuid,
             });
         }).then(function() {
@@ -128,7 +132,7 @@ module.exports = function(ctx) {
             crate = result
             console.log(ctx.world)
         }).then(function() {
-            ctx.cmd('orbit', { subject: starter.uuid, target: crate.uuid })
+            ctx.cmd('orbit', { vessel: starter.uuid, target: crate.uuid })
         }).then(function() {
             console.log("---DONE---")
         }).fail(function(e) {
@@ -193,10 +197,10 @@ module.exports = function(ctx) {
         }).then(function() {
             return ctx.wait_for_world({ uuid: drone_id })
         }).then(function() {
-            ctx.cmd('orbit', { subject: drone_id, target: crate.uuid })
+            ctx.cmd('orbit', { vessel: drone_id, target: crate.uuid })
         }).delay(10000).then(function() {
             ctx.cmd('shoot', {
-                subject: drone_id,
+                vessel: drone_id,
                 target: crate.uuid,
             });
         }).then(function() {
@@ -238,7 +242,7 @@ module.exports = function(ctx) {
             crate = result
             console.log(ctx.world)
 
-            ctx.cmd('dock', { vessel_uuid: starter.uuid, inventory: crate.uuid, slice: 'default' })
+            ctx.cmd('dock', { vessel_uuid: starter.uuid, container: crate.uuid, slice: 'default' })
         }).then(function() {
             return ctx.wait_for_world({ uuid: starter.uuid , tombstone: true })
         }).then(function() {
@@ -277,18 +281,37 @@ module.exports = function(ctx) {
         Q.fcall(function() {
             if (starter === undefined)
                 ctx.cmd('spawnStarter')
-        }).delay(1000).then(function() {
-            starter = C.find(ctx.world, { name: 'Industrial Seed Ship', account: ctx.account })
+        }).then(function() {
+            return ctx.wait_for_world({ name: 'Industrial Seed Ship' , account: ctx.account})
+        }).then(function(result) {
+            starter = result
             ctx.cmd("scanWormholes", { vessel: starter.uuid })
-        }).delay(1000).then(function() {
+        }).then(function() {
+            return ctx.wait_for_world({ type: 'wormhole' })
+        }).then(function(result) {
+            var wormhole = result
+
+            th.buildVector(position2, wormhole.position)
+
+            return Q(ctx).
+                // move_to is currently broken
+                invoke('cmd', 'orbit', { vessel: starter.uuid, target: wormhole.uuid, radius: 4 }).
+                tap(function() {
+                    return ctx.wait_for_world_fn(function(data) {
+                        var ship = data[starter.uuid]
+                        if (ship !== undefined) {
+                            th.buildVector(position1, ship.position)
+                            return (position1.distanceTo(position2) < 5)
+                        }
+                    })
+                }).
+                invoke('cmd', "jumpWormhole", { vessel: starter.uuid, wormhole: wormhole.uuid })
+        /*}).delay(1000).then(function() {
             var wormhole = C.find(ctx.world, { type: 'wormhole' })
-            ctx.cmd("jumpWormhole", { vessel: starter.uuid, wormhole: wormhole.uuid })
-        }).delay(1000).then(function() {
-            var wormhole = C.find(ctx.world, { type: 'wormhole' })
-            ctx.cmd("jumpWormhole", { vessel: starter.uuid, wormhole: wormhole.uuid })
+            ctx.cmd("jumpWormhole", { vessel: starter.uuid, wormhole: wormhole.uuid }) */
         }).then(function() {
             console.log("---DONE---")
-        }).delay(1000).fail(function(e) {
+        }).fail(function(e) {
             console.log(e)
             console.log(e.stacktrace)
         }).done()
@@ -325,7 +348,7 @@ module.exports = function(ctx) {
             scaffold = result
             console.log(ctx.world)
 
-            ctx.cmd('dock', { vessel_uuid: starter.uuid, inventory: scaffold.uuid, slice: 'default' })
+            ctx.cmd('dock', { vessel_uuid: starter.uuid, container: scaffold.uuid, slice: 'default' })
         }).then(function() {
             return ctx.wait_for_world({ uuid: starter.uuid , tombstone: true })
         }).then(function() {
