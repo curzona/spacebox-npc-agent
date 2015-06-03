@@ -21,12 +21,17 @@ C.configure({
 
 var common_setup = require('./src/common_setup.js')
 
-var ws, ctx;
+var ws, ctx, cmdPromises = [];
 
 function cmd(name, opts) {
     console.log(name, opts)
-    ws.cmd(name, opts)
-    return  ctx // for invoke chaining
+
+    var rid = ws.cmd(name, opts)
+
+    var deferred = Q.defer()
+    cmdPromises.push({ request_id: rid, promise: deferred })
+
+    return deferred.promise
 }
 
 var worldPromises = []
@@ -44,9 +49,8 @@ function handleMessage(e) {
 
     switch (data.type) {
         case "state":
+            console.log(data.state)
             data.state.forEach(function(state) {
-                console.log('received', state)
-                console.log('received', state.values)
                 ctx.world[state.key] = C.deepMerge(state.values, ctx.world[state.key] || {
                     uuid: state.key
                 })
@@ -67,8 +71,14 @@ function handleMessage(e) {
                     delete ctx.world[state.key]
             })
             break
-        default:
+        case "result":
             console.log(data)
+            cmdPromises.forEach(function(p, i)  {
+                if (data.request_id == p.request_id) {
+                    p.promise.resolve(data.result)
+                    cmdPromises.splice(i, 1)
+                }
+            })
             break
     }
 }

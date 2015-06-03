@@ -9,6 +9,37 @@ var position1 = new THREE.Vector3(),
     position2 = new THREE.Vector3()
 
 module.exports = function(ctx) {
+    
+    ctx.tick_load_test = function() {
+        var droneB = C.find(ctx.blueprints, { name: 'Drone' }), 
+            starter = C.find(ctx.world, { name: 'Industrial Seed Ship', account: ctx.account }, false)
+
+        Q.fcall(function() {
+            if (starter === undefined)
+                return ctx.cmd('spawnStarter')
+                .then(function(uuid) {
+                    return ctx.wait_for_world({ uuid: uuid })
+                }).then(function(result) {
+                    starter = result
+                })
+        }).then(function() {
+            var list = []
+            for (var i=0;i<10;i++) { list.push(i) }
+
+            return Q.all(list.map(function(i) {
+                return ctx.cmd('spawn', {
+                    blueprint: droneB.uuid,
+                    account: starter.account,
+                    position: { x: 0, y: 0, z: 0 },
+                    solar_system: starter.solar_system
+                }).then(function(uuid) {
+                    return ctx.wait_for_world({ uuid: uuid })
+                }).then(function(result) {
+                    return ctx.cmd('orbit', { vessel: result.uuid, target: starter.uuid })
+                })
+            }))
+        })
+    }
 
     ctx.move_test = function() {
         var starter = C.find(ctx.world, { name: 'Industrial Seed Ship', account: ctx.account }, false)
@@ -286,7 +317,7 @@ module.exports = function(ctx) {
         }).then(function(result) {
             starter = result
             ctx.cmd("scanWormholes", { vessel: starter.uuid })
-        }).then(function() {
+        /*}).then(function() {
             return ctx.wait_for_world({ type: 'wormhole' })
         }).then(function(result) {
             var wormhole = result
@@ -306,14 +337,11 @@ module.exports = function(ctx) {
                     })
                 }).
                 invoke('cmd', "jumpWormhole", { vessel: starter.uuid, wormhole: wormhole.uuid })
-        /*}).delay(1000).then(function() {
-            var wormhole = C.find(ctx.world, { type: 'wormhole' })
-            ctx.cmd("jumpWormhole", { vessel: starter.uuid, wormhole: wormhole.uuid }) */
         }).then(function() {
             console.log("---DONE---")
         }).fail(function(e) {
             console.log(e)
-            console.log(e.stacktrace)
+            console.log(e.stacktrace) */
         }).done()
     }
 
