@@ -49,8 +49,9 @@ function handleMessage(e) {
 
     switch (data.type) {
         case "state":
-            console.log(data.state)
             data.state.forEach(function(state) {
+                console.log(state.values)
+
                 ctx.world[state.key] = C.deepMerge(state.values, ctx.world[state.key] || {
                     uuid: state.key
                 })
@@ -64,8 +65,6 @@ function handleMessage(e) {
                         worldPromises.splice(i, 1)
                     }
                 })
-
-                console.log("updated", state.key)
 
                 if (state.values.tombstone === true)
                     delete ctx.world[state.key]
