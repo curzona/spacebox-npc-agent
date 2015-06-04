@@ -24,7 +24,7 @@ module.exports = function(ctx) {
                 })
         }).then(function() {
             var list = []
-            for (var i=0;i<10;i++) { list.push(i) }
+            for (var i=0;i<400;i++) { list.push(i) }
 
             return Q.all(list.map(function(i) {
                 return ctx.cmd('spawn', {

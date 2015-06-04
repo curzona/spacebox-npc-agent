@@ -50,7 +50,7 @@ function handleMessage(e) {
     switch (data.type) {
         case "state":
             data.state.forEach(function(state) {
-                console.log(state.values)
+                //console.log(state.values)
 
                 ctx.world[state.key] = C.deepMerge(state.values, ctx.world[state.key] || {
                     uuid: state.key
@@ -79,6 +79,8 @@ function handleMessage(e) {
                 }
             })
             break
+        default:
+            console.log(data)
     }
 }
 
