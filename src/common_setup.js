@@ -317,31 +317,31 @@ module.exports = function(ctx) {
         }).then(function(result) {
             starter = result
             ctx.cmd("scanWormholes", { vessel: starter.uuid })
-        /*}).then(function() {
+        }).then(function() {
             return ctx.wait_for_world({ type: 'wormhole' })
         }).then(function(result) {
             var wormhole = result
 
             th.buildVector(position2, wormhole.position)
 
-            return Q(ctx).
                 // move_to is currently broken
-                invoke('cmd', 'orbit', { vessel: starter.uuid, target: wormhole.uuid, radius: 4 }).
-                tap(function() {
-                    return ctx.wait_for_world_fn(function(data) {
-                        var ship = data[starter.uuid]
-                        if (ship !== undefined) {
-                            th.buildVector(position1, ship.position)
-                            return (position1.distanceTo(position2) < 5)
-                        }
-                    })
-                }).
-                invoke('cmd', "jumpWormhole", { vessel: starter.uuid, wormhole: wormhole.uuid })
+            return ctx.cmd('orbit', { vessel: starter.uuid, target: wormhole.uuid, radius: 4 }).
+            tap(function() {
+                return ctx.wait_for_world_fn(function(data) {
+                    var ship = data[starter.uuid]
+                    if (ship !== undefined) {
+                        th.buildVector(position1, ship.position)
+                        return (position1.distanceTo(position2) < 5)
+                    }
+                })
+            }).then(function() {
+                return ctx.cmd("jumpWormhole", { vessel: starter.uuid, wormhole: wormhole.uuid })
+            })
         }).then(function() {
             console.log("---DONE---")
         }).fail(function(e) {
             console.log(e)
-            console.log(e.stacktrace) */
+            console.log(e.stacktrace)
         }).done()
     }
 

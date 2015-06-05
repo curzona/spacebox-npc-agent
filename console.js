@@ -72,6 +72,7 @@ function handleMessage(e) {
             break
         case "result":
             console.log(data)
+            ctx.cmdresult = data.result
             cmdPromises.forEach(function(p, i)  {
                 if (data.request_id == p.request_id) {
                     p.promise.resolve(data.result)
