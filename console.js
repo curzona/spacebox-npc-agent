@@ -120,11 +120,16 @@ C.getAuthToken().then(function(token) {
         console.log('reset the world')
         ctx.world = {}
 
-        C.getBlueprints.reset()
-        C.getBlueprints().then(function(b) {
+        worldPromises = []
+        cmdPromises = []
+        jobPromises = {}
+
+        C.getBlueprint.reset()
+        C.request('tech', 'GET', 200, '/blueprints').
+        then(function(b) {
             ctx.blueprints = b
             console.log("Blueprints loaded")
-        })
+        }).done()
     })
     ws.on('message', handleMessage)
 
