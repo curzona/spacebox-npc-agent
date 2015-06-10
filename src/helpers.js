@@ -13,7 +13,7 @@ var position1 = new THREE.Vector3(),
     position2 = new THREE.Vector3()
 
 module.exports = function(ctx) {
-    var ws, cmdPromises = [];
+    var ws
     var worldPromises = []
     var jobPromises = {}
 
@@ -30,12 +30,10 @@ module.exports = function(ctx) {
     function cmd(name, opts) {
         console.log(name, opts)
 
-        var rid = ws.cmd(name, opts)
-
-        var deferred = Q.defer()
-        cmdPromises.push({ request_id: rid, promise: deferred })
-
-        return deferred.promise
+        return C.request('api', 'POST', 200, '/commands/'+name, opts).
+        then(function(data) {
+            return data.result
+        })
     }
 
     function handleMessage(e) {
@@ -48,6 +46,8 @@ module.exports = function(ctx) {
             console.log("invalid json: %s", e.data)
             return
         }
+
+        //console.log(data)
 
 
         switch (data.type) {
@@ -73,24 +73,6 @@ module.exports = function(ctx) {
                         delete ctx.world[state.key]
                 })
                 break
-            case "result":
-                if (data.error === undefined) {
-                    console.log(data)
-                    ctx.cmdresult = data.result
-                }
-
-                cmdPromises.forEach(function(p, i)  {
-                    if (data.request_id == p.request_id) {
-                        if (data.error !== undefined) {
-                            p.promise.reject(data.error)
-                        } else {
-                            p.promise.resolve(data.result)
-                        }
-
-                        cmdPromises.splice(i, 1)
-                    }
-                })
-                break
             default:
                 console.log(data)
         }
@@ -107,7 +89,7 @@ module.exports = function(ctx) {
             return
         }
 
-        console.log(data)
+        //console.log(data)
 
         switch (data.type) {
             case "job":
@@ -175,11 +157,10 @@ module.exports = function(ctx) {
             ctx.world = {}
 
             worldPromises = []
-            cmdPromises = []
             jobPromises = {}
 
             C.getBlueprint.reset()
-            C.request('tech', 'GET', 200, '/blueprints').
+            C.request('api', 'GET', 200, '/blueprints').
             then(function(b) {
                 ctx.blueprints = b
                 console.log("Blueprints loaded")
@@ -189,7 +170,7 @@ module.exports = function(ctx) {
         })
         ws.on('message', handleMessage)
 
-        WebsocketWrapper.get("tech").on('message', handleTechMessage)
+        WebsocketWrapper.get("api").on('message', handleTechMessage)
     }).done()
 
 }

@@ -11,7 +11,7 @@ require('../src/helpers')(ctx)
 var droneB, starter
 
 ctx.whenConnected.then(function() {
-    return ctx.cmd('resetAccount').delay(1000)
+    //return ctx.cmd('resetAccount').delay(1000)
 }).then(function() {
     droneB = C.find(ctx.blueprints, { name: 'Drone' })
 
@@ -23,7 +23,7 @@ ctx.whenConnected.then(function() {
     })
 }).then(function() {
     var list = []
-    for (var i=0;i<400;i++) { list.push(i) }
+    for (var i=0;i<3;i++) { list.push(i) }
 
     return Q.all(list.map(function(i) {
         return ctx.cmd('spawn', {

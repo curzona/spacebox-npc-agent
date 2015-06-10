@@ -11,7 +11,7 @@ require('../src/helpers')(ctx)
 var crate, starter, crateB, labB, droneB, laserB
 
 ctx.whenConnected.then(function() {
-    return ctx.cmd('resetAccount').delay(1000)
+    //return ctx.cmd('resetAccount').delay(1000)
 }).then(function() {
     crateB = C.find(ctx.blueprints, { name: 'Space Crate' })
     labB = C.find(ctx.blueprints, { name: 'Basic Labratory' })
@@ -24,12 +24,12 @@ ctx.whenConnected.then(function() {
 }).then(function(result) {
     starter = result
 
-    return C.request("tech", 'GET', 200, '/facilities').tap(ctx.logit).
+    return C.request("api", 'GET', 200, '/facilities').tap(ctx.logit).
     then(function(facilities) {
         var lab = C.find(facilities, { inventory_id: starter.uuid, blueprint: labB.uuid })
 
         return Q.all([
-            C.request('tech', 'POST', 201, '/jobs', {
+            C.request('api', 'POST', 201, '/jobs', {
                 blueprint: laserB.uuid, facility: lab.id, action: 'research', slice: 'default',
                 parameter: "damage"
             }).then(function(resp) { return ctx.wait_for_job(resp.job.uuid) })
