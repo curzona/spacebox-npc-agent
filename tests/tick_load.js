@@ -9,6 +9,10 @@ var Q = require('q'),
 var ctx = {}
 require('../src/helpers')(ctx)
 
+C.stats.defineAll({
+    spawnRTT: 'timer',
+})
+
 var droneB, starter
 
 ctx.whenConnected.then(function() {
@@ -27,6 +31,7 @@ ctx.whenConnected.then(function() {
     for (var i=0;i<400;i++) { list.push(i) }
 
     return async.mapLimit(list, 10, function(i) {
+        var timer = C.stats.spawnRTT.start()
         return ctx.cmd('spawn', {
             blueprint: droneB.uuid,
             account: starter.account,
@@ -35,6 +40,7 @@ ctx.whenConnected.then(function() {
         }).then(function(uuid) {
             return ctx.wait_for_world({ uuid: uuid })
         }).then(function(result) {
+            timer.end()
             return ctx.cmd('orbit', { vessel: result.uuid, target: starter.uuid })
         })
     })

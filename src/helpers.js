@@ -12,7 +12,8 @@ var Q = require('q'),
 var position1 = new THREE.Vector3(),
     position2 = new THREE.Vector3()
 
-var logger = C.logging.create('agents')
+C.logging.configure('agents')
+var logger = C.logging.create()
 
 module.exports = function(ctx) {
     var ws
@@ -117,14 +118,12 @@ module.exports = function(ctx) {
 
             jobPromises[uuid] = deferred
 
-            logger.info("waiting for job")
-            logger.trace({ conditions: { uuid: uuid } }, "waiting conditions")
+            logger.info({ uuid: uuid}, "waiting for job")
 
             return deferred.promise
         },
         wait_for_world: function(opts) {
-            logger.info("waiting for world")
-            logger.trace({ conditions: opts }, "waiting conditions")
+            logger.info(opts, "waiting for world")
 
             return ctx.wait_for_world_fn(function (data) {
                 return C.find(data, opts, false)
