@@ -12,6 +12,8 @@ var Q = require('q'),
 var position1 = new THREE.Vector3(),
     position2 = new THREE.Vector3()
 
+var logger = C.logging.create('agents')
+
 module.exports = function(ctx) {
     var ws
     var worldPromises = []
@@ -28,7 +30,8 @@ module.exports = function(ctx) {
     ctx.account = process.env.CREDS.split(':')[0]
 
     function cmd(name, opts) {
-        console.log(name, opts)
+        logger.info({ cmd: name }, 'sending command')
+        logger.trace({ cmd: name, opts: opts }, 'command arguments')
 
         return C.request('api', 'POST', 200, '/commands/'+name, opts).
         then(function(data) {
@@ -53,7 +56,7 @@ module.exports = function(ctx) {
         switch (data.type) {
             case "state":
                 data.state.forEach(function(state) {
-                    //console.log(state.values)
+                    logger.trace({state: state.values}, 'received.state')
 
                     ctx.world[state.key] = C.deepMerge(state.values, ctx.world[state.key] || {
                         uuid: state.key
@@ -74,7 +77,7 @@ module.exports = function(ctx) {
                 })
                 break
             default:
-                console.log(data)
+                logger.debug({ data: data }, 'received.unknown.data')
         }
     }
 
@@ -84,12 +87,11 @@ module.exports = function(ctx) {
         try {
             data = JSON.parse(e.data)
         } catch (error) {
-            console.log(error)
-            console.log("invalid json: %s", e.data)
+            logger.error({ err: error, msg: e }, 'invalid json')
             return
         }
 
-        //console.log(data)
+        logger.trace({ data: data }, 'recived tech message')
 
         switch (data.type) {
             case "job":
@@ -105,7 +107,8 @@ module.exports = function(ctx) {
     }
 
     C.deepMerge({
-        logit: function(arg) { ctx.ret  = arg; console.log(arg); return arg },
+        logger: logger,
+        logit: function(arg) { ctx.ret  = arg; logger.debug({ result: arg }); return arg },
         closeWebSocket: function() {
             ws.close()
         },
@@ -114,11 +117,15 @@ module.exports = function(ctx) {
 
             jobPromises[uuid] = deferred
 
-            console.log("waiting for job", uuid)
+            logger.info("waiting for job")
+            logger.trace({ conditions: { uuid: uuid } }, "waiting conditions")
+
             return deferred.promise
         },
         wait_for_world: function(opts) {
-            console.log("waiting for world", opts)
+            logger.info("waiting for world")
+            logger.trace({ conditions: opts }, "waiting conditions")
+
             return ctx.wait_for_world_fn(function (data) {
                 return C.find(data, opts, false)
             })
@@ -149,11 +156,11 @@ module.exports = function(ctx) {
     ctx.whenConnected = whenConnected.promise
 
     C.getAuthToken().then(function(token) {
-        console.log("authenticated, connecting")
+        logger.info("authenticated, connecting")
 
         ws  = WebsocketWrapper.get("3dsim")
         ws.onOpen(function() {
-            console.log('reset the world')
+            logger.info('reset the world')
             ctx.world = {}
 
             worldPromises = []
@@ -163,7 +170,7 @@ module.exports = function(ctx) {
             C.request('api', 'GET', 200, '/blueprints').
             then(function(b) {
                 ctx.blueprints = b
-                console.log("Blueprints loaded")
+                logger.debug("Blueprints loaded")
             }).then(function() {
                 whenConnected.resolve()
             }).done()

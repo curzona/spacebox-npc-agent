@@ -3,6 +3,7 @@
 'use strict';
 
 var Q = require('q'),
+    async = require('async-q'),
     C = require('spacebox-common')
 
 var ctx = {}
@@ -23,9 +24,9 @@ ctx.whenConnected.then(function() {
     })
 }).then(function() {
     var list = []
-    for (var i=0;i<3;i++) { list.push(i) }
+    for (var i=0;i<400;i++) { list.push(i) }
 
-    return Q.all(list.map(function(i) {
+    return async.mapLimit(list, 10, function(i) {
         return ctx.cmd('spawn', {
             blueprint: droneB.uuid,
             account: starter.account,
@@ -36,7 +37,7 @@ ctx.whenConnected.then(function() {
         }).then(function(result) {
             return ctx.cmd('orbit', { vessel: result.uuid, target: starter.uuid })
         })
-    }))
+    })
 }).then(function() {
     console.log('Done, you may Cntl-C at any time unless you are waiting')
 }).fail(function(e) {
