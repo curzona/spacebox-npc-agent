@@ -28,7 +28,7 @@ ctx.whenConnected.then(function() {
     })
 }).then(function() {
     var list = []
-    for (var i=0;i<80;i++) { list.push(i) }
+    for (var i=0;i<100;i++) { list.push(i) }
 
     return async.mapLimit(list, 10, function(i) {
         var timer = C.stats.spawnRTT.start()
