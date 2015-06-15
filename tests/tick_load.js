@@ -28,7 +28,7 @@ ctx.whenConnected.then(function() {
     })
 }).then(function() {
     var list = []
-    for (var i=0;i<100;i++) { list.push(i) }
+    for (var i=0;i<800;i++) { list.push(i) }
 
     return async.mapLimit(list, 10, function(i) {
         var timer = C.stats.spawnRTT.start()
@@ -45,7 +45,8 @@ ctx.whenConnected.then(function() {
         })
     })
 }).then(function() {
-    console.log('Done, you may Cntl-C at any time unless you are waiting')
+    console.log('Done')
+    process.exit()
 }).fail(function(e) {
     if (e !== undefined && e.stacktrace !== undefined) {
         console.log(e.stacktrace)

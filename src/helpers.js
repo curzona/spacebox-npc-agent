@@ -51,9 +51,6 @@ module.exports = function(ctx) {
             return
         }
 
-        //console.log(data)
-
-
         switch (data.type) {
             case "state":
                 data.state.forEach(function(state) {
@@ -77,8 +74,12 @@ module.exports = function(ctx) {
                         delete ctx.world[state.key]
                 })
                 break
+            case 'result':
+                console.log(data)
+                ctx.result = data.result
+                break
             default:
-                logger.debug({ data: data }, 'received.unknown.data')
+                logger.warn({ data: data }, 'received.unknown.data')
         }
     }
 
@@ -110,6 +111,7 @@ module.exports = function(ctx) {
     C.deepMerge({
         logger: logger,
         logit: function(arg) { ctx.ret  = arg; logger.debug({ result: arg }); return arg },
+        getWebSocket: function() { return ws }, // because it's async
         closeWebSocket: function() {
             ws.close()
         },
