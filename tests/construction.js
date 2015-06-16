@@ -11,7 +11,7 @@ require('../src/helpers')(ctx)
 var crate, starter, crateB, factoryB, metalB
 
 ctx.whenConnected.then(function() {
-//    return ctx.cmd('resetAccount').delay(1000)
+    return ctx.cmd('resetAccount').delay(1000)
 }).then(function() {
     crateB = C.find(ctx.blueprints, { name: 'Space Crate' })
     factoryB = C.find(ctx.blueprints, { name: 'Basic Factory' })

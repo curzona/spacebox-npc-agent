@@ -11,7 +11,7 @@ require('../src/helpers')(ctx)
 var crate, starter, crateB, labB, droneB, laserB
 
 ctx.whenConnected.then(function() {
-    //return ctx.cmd('resetAccount').delay(1000)
+    return ctx.cmd('resetAccount').delay(1000)
 }).then(function() {
     crateB = C.find(ctx.blueprints, { name: 'Space Crate' })
     labB = C.find(ctx.blueprints, { name: 'Basic Labratory' })

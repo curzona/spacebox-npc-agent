@@ -16,7 +16,7 @@ C.stats.defineAll({
 var droneB, starter
 
 ctx.whenConnected.then(function() {
-    //return ctx.cmd('resetAccount').delay(1000)
+    return ctx.cmd('resetAccount').delay(1000)
 }).then(function() {
     droneB = C.find(ctx.blueprints, { name: 'Drone' })
 

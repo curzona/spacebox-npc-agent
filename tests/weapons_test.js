@@ -71,8 +71,6 @@ ctx.whenConnected.then(function() {
 }).then(function() {
     return ctx.wait_for_world({ uuid: drone_id })
 }).then(function() {
-    return ctx.cmd('move_to', { vessel: drone_id, target: { x: 20, y: 0, z: 0 } })
-}).delay(10000).then(function() {
     return ctx.cmd('shoot', {
         vessel: drone_id,
         target: crate.uuid,
