@@ -30,11 +30,16 @@ module.exports = function(ctx) {
     })
     ctx.account = process.env.CREDS.split(':')[0]
 
-    function cmd(name, opts) {
+    function cmd(name, opts, overrides) {
         logger.info({ cmd: name }, 'sending command')
         logger.trace({ cmd: name, opts: opts }, 'command arguments')
 
-        return C.request('api', 'POST', 200, '/commands/'+name, opts).
+        if (typeof opts !== 'object')
+            opts = {}
+
+        opts.ts = ctx.currentTick
+
+        return C.request('api', 'POST', 200, '/commands/'+name, opts, logger, overrides).
         then(function(data) {
             return data.result
         })
@@ -53,8 +58,9 @@ module.exports = function(ctx) {
 
         switch (data.type) {
             case "state":
+                logger.trace({data: data}, 'received.state')
+                ctx.currentTick = data.timestamp
                 data.state.forEach(function(state) {
-                    logger.trace({state: state.values}, 'received.state')
 
                     ctx.world[state.key] = C.deepMerge(state.values, ctx.world[state.key] || {
                         uuid: state.key
@@ -156,29 +162,24 @@ module.exports = function(ctx) {
     var whenConnected = Q.defer()
     ctx.whenConnected = whenConnected.promise
 
-    C.getAuthToken().then(function(token) {
-        logger.info("authenticated, connecting")
+    ws  = WebsocketWrapper.get("3dsim")
+    ws.onOpen(function() {
+        logger.info('reset the world')
+        ctx.world = {}
 
-        ws  = WebsocketWrapper.get("3dsim")
-        ws.onOpen(function() {
-            logger.info('reset the world')
-            ctx.world = {}
+        worldPromises = []
+        jobPromises = {}
 
-            worldPromises = []
-            jobPromises = {}
+        C.getBlueprint.reset()
+        C.request('api', 'GET', 200, '/blueprints').
+        then(function(b) {
+            ctx.blueprints = b
+            logger.debug("Blueprints loaded")
+        }).then(function() {
+            whenConnected.resolve()
+        }).done()
+    })
+    ws.on('message', handleMessage)
 
-            C.getBlueprint.reset()
-            C.request('api', 'GET', 200, '/blueprints').
-            then(function(b) {
-                ctx.blueprints = b
-                logger.debug("Blueprints loaded")
-            }).then(function() {
-                whenConnected.resolve()
-            }).done()
-        })
-        ws.on('message', handleMessage)
-
-        WebsocketWrapper.get("api").on('message', handleTechMessage)
-    }).done()
-
+    WebsocketWrapper.get("api").on('message', handleTechMessage)
 }
