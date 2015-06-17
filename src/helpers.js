@@ -1,19 +1,17 @@
 'use strict';
 
-var Q = require('q'),
-    events = require('events'),
-    THREE = require('three'),
-    th = require('spacebox-common/src/three_helpers.js'),
-    C = require('spacebox-common'),
-    repl = require("repl"),
-    urlUtil = require("url"),
-    WebsocketWrapper = require('spacebox-common/src/websockets-wrapper.js')
+var Q = require('q')
+var events = require('events')
+var THREE = require('three')
+var th = require('spacebox-common/src/three_helpers.js')
+var C = require('spacebox-common')
+var repl = require("repl")
+var urlUtil = require("url")
 
-var position1 = new THREE.Vector3(),
-    position2 = new THREE.Vector3()
+var position1 = new THREE.Vector3()
+var position2 = new THREE.Vector3()
 
-C.logging.configure('agents')
-var logger = C.logging.create()
+var logger = C.logging.create('agent')
 
 module.exports = function(ctx) {
     var ws
@@ -24,25 +22,25 @@ module.exports = function(ctx) {
         process.env.CREDS === undefined)
         throw new Error("both ENV['ENDPOINT'] and ENV['CREDS'] are required")
 
-    C.configure({
+    var clientLibFn = require('spacebox-common/src/client')
+    function buildClient(config) {
+        return clientLibFn(logger, config)
+    }
+    
+    var client = buildClient({
         AUTH_URL: process.env.ENDPOINT,
         credentials: process.env.CREDS
     })
+
     ctx.account = process.env.CREDS.split(':')[0]
 
-    function cmd(name, opts, overrides) {
-        logger.info({ cmd: name }, 'sending command')
-        logger.trace({ cmd: name, opts: opts }, 'command arguments')
-
+    function cmd(name, opts) {
         if (typeof opts !== 'object')
             opts = {}
 
         opts.ts = ctx.currentTick
 
-        return C.request('api', 'POST', 200, '/commands/'+name, opts, logger, overrides).
-        then(function(data) {
-            return data.result
-        })
+        return client.cmd(name, opts)
     }
 
     function handleMessage(e) {
@@ -154,6 +152,8 @@ module.exports = function(ctx) {
             }
         },
         cmd: cmd,
+        client: client,
+        customClient: buildClient,
         C: C
     }, ctx)
 
@@ -162,7 +162,7 @@ module.exports = function(ctx) {
     var whenConnected = Q.defer()
     ctx.whenConnected = whenConnected.promise
 
-    ws  = WebsocketWrapper.get("3dsim")
+    ws = client.getWebsocket('3dsim')
     ws.onOpen(function() {
         logger.info('reset the world')
         ctx.world = {}
@@ -170,8 +170,8 @@ module.exports = function(ctx) {
         worldPromises = []
         jobPromises = {}
 
-        C.getBlueprint.reset()
-        C.request('api', 'GET', 200, '/blueprints').
+        client.getBlueprint.reset()
+        client.request('api', 'GET', 200, '/blueprints').
         then(function(b) {
             ctx.blueprints = b
             logger.debug("Blueprints loaded")
@@ -181,5 +181,5 @@ module.exports = function(ctx) {
     })
     ws.on('message', handleMessage)
 
-    WebsocketWrapper.get("api").on('message', handleTechMessage)
+    client.getWebsocket('api').on('message', handleTechMessage)
 }

@@ -24,12 +24,12 @@ ctx.whenConnected.then(function() {
 }).then(function(result) {
     starter = result
 
-    return C.request("api", 'GET', 200, '/facilities').tap(ctx.logit).
+    return ctx.client.request("api", 'GET', 200, '/facilities').tap(ctx.logit).
     then(function(facilities) {
         var lab = C.find(facilities, { inventory_id: starter.uuid, blueprint: labB.uuid })
 
         return Q.all([
-            C.request('api', 'POST', 201, '/jobs', {
+            ctx.client.request('api', 'POST', 201, '/jobs', {
                 blueprint: laserB.uuid, facility: lab.id, action: 'research', slice: 'default',
                 parameter: "damage"
             }).then(function(resp) { return ctx.wait_for_job(resp.job.uuid) })

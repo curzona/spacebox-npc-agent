@@ -23,12 +23,12 @@ ctx.whenConnected.then(function() {
 }).then(function(result) {
     starter = result
 
-    return C.request("api", 'GET', 200, '/facilities').tap(ctx.logit).then(function(facilities) {
+    return ctx.client.request("api", 'GET', 200, '/facilities').tap(ctx.logit).then(function(facilities) {
         var factory = C.find(facilities, { inventory_id: starter.uuid, blueprint: factoryB.uuid })
 
         return Q.all([
-            C.request('api', 'POST', 201, '/jobs', { blueprint: crateB.uuid, facility: factory.id, action: 'manufacturing', quantity: 1, slice: 'default' }).then(function(resp) { return ctx.wait_for_job(resp.job.uuid) }),
-            C.request('api', 'POST', 201, '/jobs', { blueprint: factoryB.uuid, facility: factory.id, action: 'manufacturing', quantity: 1, slice: 'default' }).then(function(resp) { return ctx.wait_for_job(resp.job.uuid) })
+            ctx.client.request('api', 'POST', 201, '/jobs', { blueprint: crateB.uuid, facility: factory.id, action: 'manufacturing', quantity: 1, slice: 'default' }).then(function(resp) { return ctx.wait_for_job(resp.job.uuid) }),
+            ctx.client.request('api', 'POST', 201, '/jobs', { blueprint: factoryB.uuid, facility: factory.id, action: 'manufacturing', quantity: 1, slice: 'default' }).then(function(resp) { return ctx.wait_for_job(resp.job.uuid) })
         ])
     })
 }).then(function() {
@@ -44,7 +44,7 @@ ctx.whenConnected.then(function() {
     return ctx.wait_for_world({ uuid: starter.uuid , tombstone: true })
 }).then(function() {
 
-    return C.request("api", "POST", 204, "/inventory", {
+    return ctx.client.request("api", "POST", 204, "/inventory", {
         from_id: starter.uuid, from_slice: 'default',
         to_id: crate.uuid, to_slice: 'default',
         items: [{
@@ -56,10 +56,10 @@ ctx.whenConnected.then(function() {
 }).then(function(result) {
     starter = result
 
-    return C.request("api", 'GET', 200, '/facilities').tap(ctx.logit).then(function(facilities) {
+    return ctx.client.request("api", 'GET', 200, '/facilities').tap(ctx.logit).then(function(facilities) {
         var facility = C.find(facilities, { inventory_id: crate.uuid, blueprint: crateB.uuid })
 
-        return C.request('api', 'POST', 201, '/jobs', {
+        return ctx.client.request('api', 'POST', 201, '/jobs', {
             blueprint: crateB.uuid, facility: facility.id, action: 'construction', quantity: 1, slice: 'default',
             modules: [ factoryB.uuid ]
         }).then(function(resp) { return ctx.wait_for_job(resp.job.uuid) })

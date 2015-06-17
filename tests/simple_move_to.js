@@ -11,6 +11,8 @@ require('../src/helpers')(ctx)
 var droneB, starter
 
 ctx.whenConnected.then(function() {
+    return ctx.cmd('resetAccount').delay(1000)
+}).then(function() {
     droneB = C.find(ctx.blueprints, { name: 'Drone' })
 
     return ctx.cmd('spawnStarter')
@@ -20,13 +22,16 @@ ctx.whenConnected.then(function() {
     starter = result
 
     var npc_account = process.env.NPC_CREDS.split(':')[0]
-    return ctx.cmd('spawn', {
+    var npc_client = ctx.customClient({
+        AUTH_URL: process.env.ENDPOINT,
+        credentials: process.env.NPC_CREDS
+    })
+
+    return npc_client.cmd('spawn', {
         blueprint: droneB.uuid,
         account: npc_account,
         position: { x: 0, y: 0, z: 0 },
         solar_system: starter.solar_system
-    }, {
-        credentials: process.env.NPC_CREDS
     })
 }).then(function(uuid) {
     return ctx.wait_for_world({ uuid: uuid })
