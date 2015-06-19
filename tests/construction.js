@@ -23,7 +23,7 @@ ctx.whenConnected.then(function() {
 }).then(function(result) {
     starter = result
 
-    return ctx.client.request("api", 'GET', 200, '/facilities').tap(ctx.logit).then(function(facilities) {
+    return ctx.client.request("api", 'GET', 200, '/facilities').then(function(facilities) {
         var factory = C.find(facilities, { inventory_id: starter.uuid, blueprint: factoryB.uuid })
 
         return Q.all([
@@ -52,11 +52,11 @@ ctx.whenConnected.then(function() {
         }, {
             blueprint: factoryB.uuid, quantity: 1
         }]
-    }).then(ctx.logit)
+    })
 }).then(function(result) {
     starter = result
 
-    return ctx.client.request("api", 'GET', 200, '/facilities').tap(ctx.logit).then(function(facilities) {
+    return ctx.client.request("api", 'GET', 200, '/facilities').then(function(facilities) {
         var facility = C.find(facilities, { inventory_id: crate.uuid, blueprint: crateB.uuid })
 
         return ctx.client.request('api', 'POST', 201, '/jobs', {

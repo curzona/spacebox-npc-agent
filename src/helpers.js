@@ -22,7 +22,7 @@ module.exports = function(ctx) {
         process.env.CREDS === undefined)
         throw new Error("both ENV['ENDPOINT'] and ENV['CREDS'] are required")
 
-    var clientLibFn = require('spacebox-common/src/client')
+    var clientLibFn = require('./client')
     function buildClient(config) {
         return clientLibFn(logger, config)
     }
@@ -79,7 +79,7 @@ module.exports = function(ctx) {
                 })
                 break
             case 'result':
-                console.log(data)
+                logger.info(data, 'result')
                 ctx.result = data.result
                 break
             default:
@@ -114,7 +114,14 @@ module.exports = function(ctx) {
 
     C.deepMerge({
         logger: logger,
-        logit: function(arg) { ctx.ret  = arg; logger.debug({ result: arg }); return arg },
+        logit: function(arg) {
+            ctx.ret  = arg
+
+            if (process.env.STDOUT_LOG_LEVEL !== 'trace')
+                console.log(arg)
+
+            return arg
+        },
         getWebSocket: function() { return ws }, // because it's async
         closeWebSocket: function() {
             ws.close()
