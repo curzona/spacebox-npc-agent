@@ -160,8 +160,7 @@ module.exports = function(ctx) {
         },
         cmd: cmd,
         client: client,
-        customClient: buildClient,
-        C: C
+        customClient: buildClient
     }, ctx)
 
     // This only works once, but for promise based

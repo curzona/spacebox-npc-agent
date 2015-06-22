@@ -122,6 +122,9 @@ module.exports = function(ctx, config) {
                 return data.result
             })
         },
+        delete: function(path) {
+            return self.request(null, 'DELETE', null, path)
+        },
         get: function(path) {
             return self.request(null, 'GET', null, path)
         },
