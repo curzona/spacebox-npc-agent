@@ -18,7 +18,7 @@ var crate, drone_id,
     laserB
 
 ctx.whenConnected.then(function() {
-    return ctx.cmd('resetAccount').delay(1000)
+    return ctx.cmd('resetAgent').delay(1000)
 }).then(function() {
     crateB = C.find(ctx.blueprints, { name: 'Space Crate' })
     factoryB = C.find(ctx.blueprints, { name: 'Basic Factory' })
@@ -34,7 +34,7 @@ ctx.whenConnected.then(function() {
     starter = result
 
     return ctx.client.request("api", 'GET', 200, '/facilities').tap(ctx.logit).then(function(facilities) {
-        var factory = C.find(facilities, { inventory_id: starter.uuid, blueprint: factoryB.uuid })
+        var factory = C.find(facilities, { container_id: starter.uuid, blueprint: factoryB.uuid })
 
         return Q.all([
             ctx.client.request('api', 'POST', 201, '/jobs', { blueprint: crateB.uuid, facility: factory.id, action: 'manufacturing', quantity: 1, slice: 'default' }).then(function(resp) { return ctx.wait_for_job(resp.job.uuid) }),
@@ -51,12 +51,12 @@ ctx.whenConnected.then(function() {
     console.log(ctx.world)
 }).then(function() {
     return ctx.client.request("api", 'POST', 200, '/items', {
-        inventory: starter.uuid, slice: 'default', blueprint: droneB.uuid
+        container_id: starter.uuid, slice: 'default', blueprint: droneB.uuid
     }).tap(ctx.logit).then(function(doc) {
         drone_id = doc.uuid
 
         return ctx.client.request("api", 'GET', 200, '/facilities').tap(ctx.logit).then(function(facilities) {
-            var factory = C.find(facilities, { inventory_id: starter.uuid, blueprint: shipyardB.uuid })
+            var factory = C.find(facilities, { container_id: starter.uuid, blueprint: shipyardB.uuid })
 
             return Q.all([
                 ctx.client.request('api', 'POST', 201, '/jobs', {

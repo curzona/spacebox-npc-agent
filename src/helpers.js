@@ -32,7 +32,7 @@ module.exports = function(ctx) {
         credentials: process.env.CREDS
     })
 
-    ctx.account = process.env.CREDS.split(':')[0]
+    ctx.agent_id = process.env.CREDS.split(':')[0]
 
     function cmd(name, opts) {
         if (typeof opts !== 'object')

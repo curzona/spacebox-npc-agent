@@ -16,7 +16,7 @@ C.stats.defineAll({
 var droneB, starter
 
 ctx.whenConnected.then(function() {
-    return ctx.cmd('resetAccount').delay(1000)
+    return ctx.cmd('resetAgent').delay(1000)
 }).then(function() {
     droneB = C.find(ctx.blueprints, { name: 'Drone' })
 
@@ -34,7 +34,7 @@ ctx.whenConnected.then(function() {
         var timer = C.stats.spawnRTT.start()
         return ctx.cmd('spawn', {
             blueprint: droneB.uuid,
-            account: starter.account,
+            agent_id: starter.agent_id,
             position: { x: 0, y: 0, z: 0 },
             solar_system: starter.solar_system
         }).then(function(uuid) {

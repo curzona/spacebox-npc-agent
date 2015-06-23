@@ -17,7 +17,7 @@ ctx.whenConnected.then(function() {
 }).then(function() {
     return ctx.cmd('spawn', {
         blueprint: droneB.uuid,
-        account: ctx.account,
+        agent_id: ctx.agent_id,
         position: { x: 10, y: 10, z: 10 },
         solar_system: starter.solar_system
     }).then(function(uuid) {

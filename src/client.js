@@ -38,7 +38,7 @@ module.exports = function(ctx, config) {
                     var decoded = jwt.decode(value)
 
                     _authCache = {
-                        account: decoded.account,
+                        agent_id: decoded.agent_id,
                         expires: decoded.exp,
                         token: value
                     }
@@ -52,16 +52,6 @@ module.exports = function(ctx, config) {
                 console.log("failed to get auth")
                 throw e
             })
-        },
-        updateInventory: function(account, data) {
-            /* data = [{
-                inventory: uuid,
-                slice: slice,
-                blueprint: type,
-                quantity: quantity
-            }]
-            */
-            return self.request("api", "POST", 204, "/inventory", data, { sudo_account: account })
         },
         getBlueprint: function() {
             var _cache = {}

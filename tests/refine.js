@@ -10,14 +10,13 @@ require('../src/helpers')(ctx)
 
 var starter, refineryB, oreB, metalB, starterB
 
-var npc_account = process.env.NPC_CREDS.split(':')[0]
 var npc_client = ctx.customClient({
     AUTH_URL: process.env.ENDPOINT,
     credentials: process.env.NPC_CREDS
 })
 
 ctx.whenConnected.then(function() {
-    return ctx.cmd('resetAccount').delay(1000)
+    return ctx.cmd('resetAgent').delay(1000)
 }).then(function() {
     refineryB = C.find(ctx.blueprints, { name: 'Basic Refinery' })
     oreB = C.find(ctx.blueprints, { name: 'Ore' })
@@ -60,7 +59,7 @@ ctx.whenConnected.then(function() {
 }).then(function() {
     return ctx.client.request("api", 'GET', 200, '/facilities').
     then(function(facilities) {
-        var fac = C.find(facilities, { inventory_id: starter.uuid, blueprint: refineryB.uuid })
+        var fac = C.find(facilities, { container_id: starter.uuid, blueprint: refineryB.uuid })
 
         return ctx.client.request('api', 'POST', 201, '/jobs', {
             blueprint: oreB.uuid, facility: fac.id, action: 'refining', slice: 'default',
