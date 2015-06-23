@@ -43,7 +43,7 @@ ctx.whenConnected.then(function() {
         ])
     })
 }).then(function() {
-    ctx.cmd('deploy', { blueprint: crateB.uuid, container_id: starter.uuid, slice: 'default', })
+    return ctx.cmd('deploy', { blueprint: crateB.uuid, container_id: starter.uuid, slice: 'default', })
 }).then(function(uuid) {
     return ctx.wait_for_world({ uuid: uuid })
 }).then(function(result) {
