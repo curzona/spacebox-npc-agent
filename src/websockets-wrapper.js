@@ -117,7 +117,6 @@ C.deepMerge({
 
 module.exports = function(client) {
     var logger = client.logger
-    var handlers = {}
 
     function websocketUrl(service) {
         return Q.spread([client.getEndpoints(), client.getAuthToken()], function(endpoints, token) {
@@ -141,15 +140,13 @@ module.exports = function(client) {
         })
     }
 
-    return function(service) {
-        if (handlers[service] === undefined) {
-            var urlq = websocketUrl(service)
-            var h = handlers[service] = new WebsocketWrapper(urlq, logger)
+    return function() {
+        var urlq = websocketUrl('3dsim')
+        var h = new WebsocketWrapper(urlq, logger)
 
-            // This is an async call
-            h.connect()
-        }
+        // This is an async call
+        h.connect()
 
-        return handlers[service]
+        return h
     }
 }

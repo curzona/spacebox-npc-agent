@@ -19,8 +19,8 @@ ctx.whenConnected.then(function() {
     laserB = C.find(ctx.blueprints, { tech: 'laser' })
 
     return ctx.cmd('spawnStarter')
-}).then(function() {
-    return ctx.wait_for_world({ name: 'Industrial Seed Ship' , account: ctx.account})
+}).then(function(result) {
+    return ctx.wait_for_world({ uuid: result})
 }).then(function(result) {
     starter = result
 

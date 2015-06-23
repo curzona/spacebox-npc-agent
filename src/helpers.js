@@ -55,6 +55,17 @@ module.exports = function(ctx) {
         }
 
         switch (data.type) {
+            case "job":
+                logger.trace({ data: data }, 'recived tech message')
+
+                if (data.state == 'delivered') {
+                    var p = jobPromises[data.uuid]
+                    if (p !== undefined) {
+                        delete jobPromises[data.uuid]
+                        p.resolve(data)
+                    }
+                }
+                break;
             case "state":
                 logger.trace({data: data}, 'received.state')
                 ctx.currentTick = data.timestamp
@@ -84,31 +95,6 @@ module.exports = function(ctx) {
                 break
             default:
                 logger.warn({ data: data }, 'received.unknown.data')
-        }
-    }
-
-    function handleTechMessage(e) {
-        var data
-
-        try {
-            data = JSON.parse(e.data)
-        } catch (error) {
-            logger.error({ err: error, msg: e }, 'invalid json')
-            return
-        }
-
-        logger.trace({ data: data }, 'recived tech message')
-
-        switch (data.type) {
-            case "job":
-                if (data.state == 'delivered') {
-                    var p = jobPromises[data.uuid]
-                    if (p !== undefined) {
-                        delete jobPromises[data.uuid]
-                        p.resolve(data)
-                    }
-                }
-                break;
         }
     }
 
@@ -168,7 +154,7 @@ module.exports = function(ctx) {
     var whenConnected = Q.defer()
     ctx.whenConnected = whenConnected.promise
 
-    ws = client.getWebsocket('3dsim')
+    ws = client.getWebsocket()
     ws.onOpen(function() {
         logger.info('reset the world')
         ctx.world = {}
@@ -186,6 +172,4 @@ module.exports = function(ctx) {
         }).done()
     })
     ws.on('message', handleMessage)
-
-    client.getWebsocket('api').on('message', handleTechMessage)
 }
