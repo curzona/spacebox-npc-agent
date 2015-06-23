@@ -18,8 +18,8 @@ ctx.whenConnected.then(function() {
     metalB = C.find(ctx.blueprints, { name: 'Metal' })
 
     return ctx.cmd('spawnStarter')
-}).then(function() {
-    return ctx.wait_for_world({ name: 'Industrial Seed Ship' , account: ctx.account})
+}).then(function(result) {
+    return ctx.wait_for_world({ uuid: result})
 }).then(function(result) {
     starter = result
 
@@ -33,8 +33,8 @@ ctx.whenConnected.then(function() {
     })
 }).then(function() {
     return ctx.cmd('deploy', { blueprint: crateB.uuid, container_id: starter.uuid, slice: 'default', })
-}).then(function() {
-    return ctx.wait_for_world({ name: 'Space Crate' , account: ctx.account})
+}).then(function(result) {
+    return ctx.wait_for_world({ uuid: result })
 }).then(function(result) {
     crate = result
     console.log(ctx.world)

@@ -24,8 +24,8 @@ ctx.whenConnected.then(function() {
     metalB = C.find(ctx.blueprints, { name: 'Metal' })
 
     return ctx.cmd('spawnStarter')
-}).then(function() {
-    return ctx.wait_for_world({ name: 'Industrial Seed Ship' , account: ctx.account})
+}).then(function(result) {
+    return ctx.wait_for_world({ uuid: result })
 }).then(function(result) {
     starter = result
     starterB = ctx.blueprints[starter.blueprint]

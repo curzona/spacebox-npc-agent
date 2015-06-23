@@ -28,8 +28,8 @@ ctx.whenConnected.then(function() {
     laserB = C.find(ctx.blueprints, { name: 'Drone Laser' })
 
     return ctx.cmd('spawnStarter')
-}).then(function() {
-    return ctx.wait_for_world({ name: 'Industrial Seed Ship' , account: ctx.account})
+}).then(function(uuid) {
+    return ctx.wait_for_world({ uuid: uuid })
 }).then(function(result) {
     starter = result
 
@@ -44,8 +44,8 @@ ctx.whenConnected.then(function() {
     })
 }).then(function() {
     ctx.cmd('deploy', { blueprint: crateB.uuid, container_id: starter.uuid, slice: 'default', })
-}).then(function() {
-    return ctx.wait_for_world({ name: 'Space Crate' , account: ctx.account})
+}).then(function(uuid) {
+    return ctx.wait_for_world({ uuid: uuid })
 }).then(function(result) {
     crate = result
     console.log(ctx.world)
