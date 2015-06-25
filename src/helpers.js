@@ -1,7 +1,7 @@
 'use strict';
 
 var Q = require('q')
-var events = require('events')
+var EventEmitter = require('events').EventEmitter
 var THREE = require('three')
 var th = require('spacebox-common/src/three_helpers.js')
 var C = require('spacebox-common')
@@ -32,74 +32,21 @@ module.exports = function(ctx) {
         credentials: process.env.CREDS
     })
 
+    var events = ctx.events = new EventEmitter()
     ctx.agent_id = process.env.CREDS.split(':')[0]
-
-    function cmd(name, opts) {
-        if (typeof opts !== 'object')
-            opts = {}
-
-        opts.ts = ctx.currentTick
-
-        return client.cmd(name, opts)
-    }
-
-    function handleMessage(e) {
-        var data
-
-        try {
-            data = JSON.parse(e.data)
-        } catch (error) {
-            console.log(error)
-            console.log("invalid json: %s", e.data)
-            return
-        }
-
-        switch (data.type) {
-            case "job":
-                logger.trace({ data: data }, 'recived tech message')
-
-                if (data.state == 'delivered') {
-                    var p = jobPromises[data.uuid]
-                    if (p !== undefined) {
-                        delete jobPromises[data.uuid]
-                        p.resolve(data)
-                    }
-                }
-                break;
-            case "state":
-                logger.trace({data: data}, 'received.state')
-                ctx.currentTick = data.timestamp
-                data.state.forEach(function(state) {
-
-                    ctx.world[state.key] = C.deepMerge(state.values, ctx.world[state.key] || {
-                        uuid: state.key
-                    })
-
-                    var fake = {}
-                    fake[state.key] = ctx.world[state.key]
-                    worldPromises.forEach(function(pair, i) {
-                        var result = pair.fn(fake)
-                        if (result !== undefined && result !== false) {
-                            pair.promise.resolve(result)
-                            worldPromises.splice(i, 1)
-                        }
-                    })
-
-                    if (state.values.tombstone === true)
-                        delete ctx.world[state.key]
-                })
-                break
-            case 'result':
-                logger.info(data, 'result')
-                ctx.result = data.result
-                break
-            default:
-                logger.warn({ data: data }, 'received.unknown.data')
-        }
-    }
+    ctx.client = client
+    ctx.customClient = buildClient
+    ctx.logger= logger
 
     C.deepMerge({
-        logger: logger,
+        cmd: function(name, opts) {
+            if (typeof opts !== 'object')
+                opts = {}
+
+            opts.wait_ts = ctx.currentTick
+
+            return client.cmd(name, opts)
+        },
         logit: function(arg) {
             ctx.ret  = arg
 
@@ -144,9 +91,6 @@ module.exports = function(ctx) {
                 return deferred.promise
             }
         },
-        cmd: cmd,
-        client: client,
-        customClient: buildClient
     }, ctx)
 
     // This only works once, but for promise based
@@ -171,5 +115,60 @@ module.exports = function(ctx) {
             whenConnected.resolve()
         }).done()
     })
-    ws.on('message', handleMessage)
+
+    ws.on('message', function handleMessage(e) {
+        var data
+
+        try {
+            data = JSON.parse(e.data)
+        } catch (error) {
+            logger.error({ err: error, text: e.data }, 'invalid json')
+            return
+        }
+
+        logger.trace({ data: data }, 'recived message')
+
+        switch (data.type) {
+            case "job":
+
+                events.emit('job', data)
+
+                if (data.state == 'delivered') {
+                    var p = jobPromises[data.uuid]
+                    if (p !== undefined) {
+                        delete jobPromises[data.uuid]
+                        p.resolve(data)
+                    }
+                }
+                break;
+            case "resources":
+                events.emit('resources', data)
+                break;
+            case "state":
+                ctx.currentTick = data.timestamp
+                data.state.forEach(function(state) {
+
+                    ctx.world[state.key] = C.deepMerge(state.values, ctx.world[state.key] || {
+                        uuid: state.key
+                    })
+
+                    var fake = {}
+                    fake[state.key] = ctx.world[state.key]
+                    worldPromises.forEach(function(pair, i) {
+                        var result = pair.fn(fake)
+                        if (result !== undefined && result !== false) {
+                            pair.promise.resolve(result)
+                            worldPromises.splice(i, 1)
+                        }
+                    })
+
+                    if (state.values.tombstone === true)
+                        delete ctx.world[state.key]
+                })
+                break
+            case 'result':
+                ctx.result = data.result
+                break
+        }
+    })
 }

@@ -107,7 +107,7 @@ module.exports = function(ctx, config) {
             ctx.info({ cmd: name }, 'sending command')
             ctx.trace({ cmd: name, opts: opts }, 'command arguments')
 
-            return self.request('api', 'POST', 200, '/commands/'+name, opts).
+            return self.post('/commands/'+name, opts).
             then(function(data) {
                 return data.result
             })
