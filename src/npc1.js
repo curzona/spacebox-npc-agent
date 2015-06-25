@@ -18,11 +18,6 @@ var idx = { // indexes
     b: {} // blueprints
 }
 
-var personality = {
-    min_vessels_for_exploration: 3,
-    max_econ_vessels: 2
-}
-
 ctx.whenConnected.
 then(function() {
     blueprints = ctx.blueprints
@@ -93,6 +88,11 @@ var goals = {
     fight: { fn: fight_planner, p: 0.0 }
 }
 
+var personality = {
+    min_vessels_for_exploration: 3,
+    max_crates: 2
+}
+
 function GoalOrientedActionPlanning(data) {
     if (idx.ours.length >= personality.min_vessels_for_exploration) {
         goals.build.p = goals.build.p - 0.3
@@ -122,8 +122,8 @@ function economy_planner() {
      * What can I build?
      *  
      */
-    // FIXME obviously they are not all econ vessels
-    if (idx.ours.length < personality.max_econ_vessels) {
+    // FIXME obviously they are not all crates
+    if (idx.ours.length < personality.max_crates) {
     
         if (idx.inventory[starter.uuid].contents.default[idx.b.metal.uuid] > idx.b.crate.build.resources[idx.b.metal.uuid]
        ) {
