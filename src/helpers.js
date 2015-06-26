@@ -39,14 +39,7 @@ module.exports = function(ctx) {
     ctx.logger= logger
 
     C.deepMerge({
-        cmd: function(name, opts) {
-            if (typeof opts !== 'object')
-                opts = {}
-
-            opts.wait_ts = ctx.currentTick
-
-            return client.cmd(name, opts)
-        },
+        cmd: client.cmd.bind(client),
         logit: function(arg) {
             ctx.ret  = arg
 

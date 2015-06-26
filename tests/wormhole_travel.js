@@ -28,6 +28,7 @@ ctx.whenConnected.then(function() {
     // have to delay until the api sees it
     return ctx.cmd("scanWormholes", { vessel: starter.uuid }).delay(1000)
 }).then(function(result) {
+    console.log(result)
     var wormhole = result[0]
     th.buildVector(position2, wormhole.position)
 
