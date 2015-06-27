@@ -10,7 +10,6 @@
     "extend": "latest",
     "q": "~1.3.0",
     "q-io": "~1.12.0",
-    "ws": "latest",
     "async-q": "latest",
     "node-uuid": "latest",
     "machina": "latest",
